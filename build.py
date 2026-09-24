@@ -56,14 +56,14 @@ HEAD = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{title}</title>
 <meta name="description" content="{desc}">
-<link rel="canonical" href="{{site}}{path}">
+<link rel="canonical" href="{{{{site}}}}{path}">
 <link rel="icon" type="image/svg+xml" href="/assets/logo-mark.svg">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
-<meta property="og:url" content="{{site}}{path}">
-<meta property="og:image" content="{{site}}{ogimg}">
-<meta name="twitter:image" content="{{site}}{ogimg}">
+<meta property="og:url" content="{{{{site}}}}{path}">
+<meta property="og:image" content="{{{{site}}}}{ogimg}">
+<meta name="twitter:image" content="{{{{site}}}}{ogimg}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">{xsite}
@@ -439,7 +439,7 @@ for fn, path, title, desc, attrs, body, script in PAGES:
     html = fill(html)
     if fn == "404.html":
         html = html.replace(f'<link rel="canonical" href="{SITE}/404">', '<meta name="robots" content="noindex">')
-    assert "{{" not in html, (fn, html[html.index("{{"):html.index("{{") + 40])
+    assert "{{" not in html and "{site}" not in html, (fn, html[html.index("{{"):html.index("{{") + 40])
     open(os.path.join(ROOT, fn), "w", encoding="utf-8").write(html)
     print(fn, len(html))
 
