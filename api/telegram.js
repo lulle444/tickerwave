@@ -4,6 +4,8 @@ const {send, tg, esc, webhookSecret} = require("../lib/telegram");
 const {redis} = require("../lib/store");
 const {currentBoard, spreadOf, THIN} = require("../lib/board");
 const A = require("../lib/alerts");
+const WB = require("../lib/weekendbot");
+const W = require("../lib/weekend");
 
 const LEVELS = [0.5, 1, 2];
 const TICK = /^[A-Z0-9.]{1,12}$/;
@@ -77,9 +79,18 @@ async function list(chat){
     {reply_markup: {inline_keyboard: rows}});
 }
 
+async function weekend(chat){
+  await WB.subscribe(chat);
+  const v = await W.view().catch(() => null), l = v && v.latest && v.latest.snap;
+  const now = v && v.closed && l && l.week === W.weekOf() ? "\n\nRight now:\n" + WB.signalText(l, A.SITE).split("\n\n").slice(1, 2).join("") : "";
+  return send(chat, `🗓 <b>You’re in for the weekend signal.</b>\n\nEvery Sunday afternoon (New York time) I’ll send where stock tokens say stocks will reopen, and on Monday after the opening bell how the call turned out.${now}`,
+    {reply_markup: {inline_keyboard: [[{text: "Open the weekend signal", url: `${A.SITE}/weekend`}], [{text: "Stop weekend updates", callback_data: "w|off"}]]}});
+}
+
 const WELCOME = `<b>${esc(B.name)} alerts</b> for stock tokens on every chain.\n\n` +
   `• <code>/gap TSLAx 1</code>: when a token trades 1% or more away from the share price.\n` +
   `• <code>/spread TSLA 1</code>: when the cheapest and priciest TSLA tokens across chains are 1% or more apart.\n` +
+  `• /weekend: every Sunday, where tokens say stocks reopen, and Monday how it turned out.\n` +
   `• /list to see or remove your alerts, /stop to remove everything.\n\n` +
   `Or tap 🔔 next to a token on ${A.SITE}. Checked every 5 minutes. Not financial advice.`;
 
@@ -90,6 +101,7 @@ async function onMessage(m){
     const pl = args[0] || "";
     if (/^g_[A-Za-z0-9-]{1,16}_[a-z]{2,12}$/.test(pl)) return gapCard(chat, pl.slice(2));
     if (/^s_[A-Za-z0-9-]{1,12}$/.test(pl)) return spreadCard(chat, pl.slice(2));
+    if (pl === "wk") return weekend(chat);
     return send(chat, WELCOME, {reply_markup: {inline_keyboard: [[{text: `Open ${B.name}`, url: A.SITE}]]}});
   }
   if (c === "/gap" || c === "/spread"){
@@ -100,8 +112,12 @@ async function onMessage(m){
     if (ctx.startsWith(kind[0] + ":")) return kind === "gap" ? createGap(chat, ctx.slice(2), num(args[0])) : createSpread(chat, ctx.slice(2), num(args[0]));
     return send(chat, kind === "gap" ? "Tell me which token, like <code>/gap TSLAx 1</code>." : "Tell me which stock, like <code>/spread TSLA 1</code>.");
   }
+  if (c === "/weekend") return args[0] && /^(off|stop)$/i.test(args[0]) ? WB.unsubscribe(chat).then(() => send(chat, "Weekend updates stopped. Send /weekend to start them again.")) : weekend(chat);
   if (c === "/list") return list(chat);
-  if (c === "/stop"){ const n = await A.removeAll(chat); return send(chat, `Removed ${n} alert${n === 1 ? "" : "s"}.`); }
+  if (c === "/stop"){
+    const [n, wk] = await Promise.all([A.removeAll(chat), WB.unsubscribe(chat)]);
+    return send(chat, `Removed ${n} alert${n === 1 ? "" : "s"}${wk ? " and stopped weekend updates" : ""}.`);
+  }
   return send(chat, WELCOME);
 }
 
@@ -112,6 +128,7 @@ async function onCallback(q){
   if (kind === "g") return createGap(chat, a, parseFloat(b));
   if (kind === "s") return createSpread(chat, a, parseFloat(b));
   if (kind === "d"){ await A.removeAlert(chat, a); return list(chat); }
+  if (kind === "w" && a === "off"){ await WB.unsubscribe(chat); return send(chat, "Weekend updates stopped. Send /weekend to start them again."); }
 }
 
 module.exports = async function handler(req, res){

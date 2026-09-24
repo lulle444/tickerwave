@@ -9,6 +9,7 @@ const {currentBoard, spreadOf, marketOpen, THIN} = require("../lib/board");
 const A = require("../lib/alerts");
 const H = require("../lib/history");
 const W = require("../lib/weekend");
+const WB = require("../lib/weekendbot");
 
 const REARM = 0.5;
 
@@ -19,9 +20,9 @@ module.exports = async function handler(req, res){
   try {
     // Weekend: share prices are frozen, so no alerts; save the hourly weekend signal instead.
     if (!marketOpen()){
-      if (await redis("EXISTS", W.K.hour(Math.floor(Date.now() / 3.6e6)))) return res.status(200).json({skipped: "US market closed, weekend signal saved this hour"});
-      const saved = await W.snapshot(await currentBoard(A.SITE));
-      return res.status(200).json({skipped: "US market closed, share prices frozen", weekendSignal: saved});
+      const saved = (await redis("EXISTS", W.K.hour(Math.floor(Date.now() / 3.6e6)))) ? 0 : await W.snapshot(await currentBoard(A.SITE));
+      const told = process.env.TELEGRAM_BOT_TOKEN ? await WB.maybeSendSignal(A.SITE).catch(e => { console.error("weekend signal send:", e); return null; }) : null;
+      return res.status(200).json({skipped: "US market closed, share prices frozen", weekendSignal: saved, told});
     }
     if (!(await redis("SET", A.K.lock, String(Date.now()), "NX", "EX", 240)))
       return res.status(200).json({skipped: "ran recently"});
@@ -35,6 +36,7 @@ module.exports = async function handler(req, res){
     const board = await currentBoard(A.SITE);
     const saved = due ? await H.record(board).catch(e => { console.error("peg history:", e); return -1; }) : 0;
     const settled = settleDue ? await W.settle(board).catch(e => { console.error("weekend settle:", e); return null; }) : null;
+    if (settled === "open" && process.env.TELEGRAM_BOT_TOKEN) await WB.sendResult(A.SITE).catch(e => console.error("weekend result send:", e));
     if (!all.length) return res.status(200).json({alerts: 0, saved, settled});
     const chainName = id => (board.chains.find(c => c.id === id) || {}).name || id;
     const byTicker = new Map(board.stocks.map(s => [s.ticker, s]));

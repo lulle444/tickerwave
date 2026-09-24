@@ -302,6 +302,7 @@ table.matrix tbody th{font:600 14px var(--display);letter-spacing:0;text-transfo
 .wkstatus h2{margin:6px 0 8px;font-size:clamp(21px,2.6vw,28px)}
 .wkstatus p{margin:0;max-width:62ch}
 .wkstatus .eyebrow{margin:0}
+.wkstatus .wkbot{margin-top:16px;display:inline-flex;align-items:center;gap:8px}
 .wkstatus.live{border-color:rgba(var(--up-rgb),.45);background:linear-gradient(120deg,rgba(var(--up-rgb),.08),transparent 60%),var(--panel)}
 .wkstatus.live .eyebrow{color:var(--up)}
 .wkclock{display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right;flex:none}

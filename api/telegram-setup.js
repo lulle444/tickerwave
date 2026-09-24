@@ -15,8 +15,9 @@ module.exports = async function handler(req, res){
     await tg("setMyCommands", {commands: [
       {command: "gap", description: "Token vs share price alert, e.g. /gap TSLAx 1"},
       {command: "spread", description: "Cross-chain spread alert, e.g. /spread TSLA 1"},
+      {command: "weekend", description: "Sunday: where tokens say stocks reopen. Monday: the result"},
       {command: "list", description: "See or remove your alerts"},
-      {command: "stop", description: "Remove all alerts"},
+      {command: "stop", description: "Remove all alerts and weekend updates"},
       {command: "start", description: `How ${B.name} alerts work`},
     ]});
     await tg("setMyDescription", {description: `Alerts for stock tokens on every chain: get a message when a token trades away from its share price, or when the same stock is priced differently across chains. From ${B.name}.`}).catch(() => {});

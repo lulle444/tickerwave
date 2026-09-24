@@ -406,7 +406,7 @@ ALERTS_ON = """
     <div>
       <p class="eyebrow">Telegram</p>
       <h2 style="font-size:26px">Free, no sign-up</h2>
-      <p>Open the bot, tap Start and send a command, or tap 🔔 next to any token on the <a href="/">stock board</a> or any stock on <a href="/spreads">spreads</a>. We check every 5 minutes while the US market trades. Send /list to see or remove your alerts.</p>
+      <p>Open the bot, tap Start and send a command, or tap 🔔 next to any token on the <a href="/">stock board</a> or any stock on <a href="/spreads">spreads</a>. We check every 5 minutes while the US market trades. Send /list to see or remove your alerts, and /weekend for the <a href="/weekend">weekend signal</a> every Sunday and Monday.</p>
     </div>
     <a class="btn primary" href="https://t.me/""" + BOT + """" target="_blank" rel="noopener">""" + BELL_SVG + """ Open @""" + BOT + """</a>
   </section>
@@ -423,7 +423,7 @@ ALERTS_SOON = """
 WEEKEND = pagehead("Weekend signal", "Where tokens say stocks <em>reopen.</em>",
   "From Friday 8 pm to Sunday 8 pm New York time the stock market is shut, but stock tokens keep trading. Their price against Friday’s close is the market’s live guess at where each stock reopens.") + """
   <section class="wkstatus panel" id="wkStatus" aria-live="polite">
-    <div><p class="eyebrow" id="wkMode">Weekend signal</p><h2 id="wkTitle">Loading…</h2><p id="wkText" class="muted"></p></div>
+    <div><p class="eyebrow" id="wkMode">Weekend signal</p><h2 id="wkTitle">Loading…</h2><p id="wkText" class="muted"></p>""" + (f"""<a class="btn small wkbot" href="https://t.me/{BOT}?start=wk" target="_blank" rel="noopener">{BELL_SVG} Get it on Telegram</a>""" if BOT else "") + """</div>
     <div class="wkclock"><small id="wkClockLabel">&nbsp;</small><strong id="wkClock" class="num">–</strong><span id="wkClockAt">&nbsp;</span></div>
   </section>
 
