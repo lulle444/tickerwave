@@ -8,7 +8,7 @@
   "tagline": "Every stock token, held to its share price.",
   "description": "Same stock, different price. Tokenized stocks on Robinhood Chain, Solana, Ethereum and more, checked against the real share: how far each token trades from its peg, market depth and volume, live.",
   "domain": "usepegwatch.vercel.app",
-  "x": "",
+  "x": "usepegwatch",
   "telegram": "usePegwatchBot",
   "colors": {
     "bg": "#07080D",

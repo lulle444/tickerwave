@@ -90,7 +90,7 @@ def nav(path):
     <div class="navlinks">
 {links}
     </div>
-    <div class="source" id="source"><span class="dot" id="dot"></span><span id="sourceText">Loading data…</span></div>
+    <div class="navright">{NAV_X}<div class="source" id="source"><span class="dot" id="dot"></span><span id="sourceText">Loading data…</span></div></div>
   </nav>
   <div class="mobilenav" aria-label="Sections">
 {links.replace("      <a", "    <a")}
@@ -100,6 +100,7 @@ def nav(path):
 
 X_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'
 X_LINK = (f'\n        <a class="social" href="https://x.com/{B["x"]}" target="_blank" rel="noopener me" aria-label="{{{{name}}}} on X">{X_SVG}@{B["x"]}</a>' if B["x"] else "")
+NAV_X = (f'<a class="navx" href="https://x.com/{B["x"]}" target="_blank" rel="noopener me" aria-label="Follow {{{{name}}}} on X" title="@{B["x"]} on X">{X_SVG}</a>' if B["x"] else "")
 
 FOOT = """
   <footer class="sitefoot">
