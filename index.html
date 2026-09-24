@@ -50,10 +50,10 @@
   <header class="hero" id="top">
     <div>
       <p class="eyebrow">Stock tokens · Every chain</p>
-      <h1>One stock. <em>Every chain.</em></h1>
-      <p class="lede">Tesla, Nvidia and hundreds more now trade as tokens on Robinhood Chain, Solana, Ethereum and beyond. Pegwatch lines up every version side by side, so you can see which one tracks the real share best and where the market is deepest.</p>
+      <h1>Is your stock token <em>worth the stock?</em></h1>
+      <p class="lede">Tesla, Nvidia and hundreds more now trade as tokens on Robinhood Chain, Solana, Ethereum and beyond. Each one should track its real share, but not all of them do. Pegwatch checks every version against the share price, all day, and shows which tokens hold their peg and which drift.</p>
       <div class="ctas">
-        <a class="btn primary" href="#board">Compare stock tokens</a>
+        <a class="btn primary" href="#board">See which tokens drift</a>
         <a class="btn ghost" href="#how">How it works</a>
       </div>
       <p class="trust">Live prices from the chains · No sign-up · Independent</p>
@@ -68,7 +68,7 @@
   <section class="stats panel" aria-label="Key figures">
     <div><small>Stocks</small><strong id="gStocks">–</strong><span id="gStocksSub">&nbsp;</span></div>
     <div><small>Token versions</small><strong id="gVersions">–</strong><span id="gVersionsSub">&nbsp;</span></div>
-    <div><small>Traded on chain, 24h</small><strong id="gVolume">–</strong><span id="gVolumeSub">&nbsp;</span></div>
+    <div><small>Off peg right now</small><strong id="gOff">–</strong><span id="gOffSub">&nbsp;</span></div>
     <div><small>Closest to the share</small><strong id="gBest">–</strong><span id="gBestSub">&nbsp;</span></div>
   </section>
 
@@ -101,7 +101,7 @@
   </section>
 
   <section class="block" id="chains" aria-labelledby="chainsH">
-    <div class="sectionhead"><div><p class="eyebrow">Where they trade</p><h2 id="chainsH">Chains and issuers</h2><p class="sub">Each issuer holds the real shares and mints tokens against them. The same stock can exist in several versions, with different rules for who can mint, redeem and hold them.</p></div></div>
+    <div class="sectionhead"><div><p class="eyebrow">Where they trade</p><h2 id="chainsH">Chains and issuers</h2><p class="sub">Each issuer holds the real shares and mints tokens against them. The same stock can exist in several versions, with different rules for who can mint, redeem and hold them. The peg score shows how close each issuer’s tokens stayed to the share over the past week, counting markets over $10k.</p></div></div>
     <div class="issuergrid" id="issuers"></div>
   </section>
 
@@ -118,6 +118,7 @@
     <div class="sectionhead"><div><p class="eyebrow">FAQ</p><h2 id="faqH">Questions, answered</h2></div></div>
     <div class="faqlist panel">
       <details><summary>What is a stock token?</summary><p>A token on a blockchain that tracks one share of a real company. The issuer buys and holds the shares, and lets approved partners mint and redeem tokens against them. Holding the token gives you the price exposure, not shareholder rights such as voting.</p></details>
+      <details><summary>What does “holding its peg” mean?</summary><p>A stock token is meant to be worth exactly the share it stands for. When its on-chain price matches the share price (times its share ratio), it holds its peg. When it trades above or below, it has drifted. Pegwatch saves every token’s distance from its share once an hour while the US market trades, so you can see which tokens and issuers hold their peg over time, not just right now.</p></details>
       <details><summary>Why can the same stock have different prices?</summary><p>Each version trades in its own markets on its own chain. Arbitrage pulls them toward the share price, but fees, market depth and who is allowed to mint and redeem leave small gaps. When the US market is closed, tokens keep trading while the share price stands still.</p></details>
       <details><summary>Is Pegwatch free?</summary><p>Yes. No sign-up, no wallet connection and no fee. Pegwatch is read-only and never touches your funds.</p></details>
       <details><summary>Can I buy tokens here?</summary><p>No. We link to the market each price comes from, so you can check it yourself. Many stock tokens are not available to US persons or in some countries, so check the issuer’s rules before you trade.</p></details>

@@ -89,11 +89,10 @@ function renderGauge(){
   set("gVersions", V.length);
   const pl = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
   set("gVersionsSub", `${pl(state.issuers.length, "issuer")} on ${pl(state.chains.length, "chain")}`);
-  set("gVolume", fmtUsd(V.reduce((t, v) => t + (v.volume24h || 0), 0)));
-  const byChain = {};
-  for (const v of V) byChain[v.chain] = (byChain[v.chain] || 0) + (v.volume24h || 0);
-  const lead = Object.entries(byChain).sort((a, b) => b[1] - a[1])[0];
-  set("gVolumeSub", lead ? `Most on ${chainName(lead[0])}` : "On DEX markets");
+  const deep = V.filter(v => v.gap != null && !v.thin && !v.ratioUnknown && !v.halted);
+  const off = deep.filter(v => Math.abs(v.gap) > 0.01);
+  set("gOff", deep.length ? off.length : "–");
+  set("gOffSub", !deep.length ? "Needs live share prices" : state.paused ? `of ${deep.length} deep markets · shares paused` : `of ${deep.length} deep markets, over 1% away`);
   const perIssuer = {};
   for (const s of S) if (s.best && s.versions.filter(v => v.gap != null && !v.thin).length > 1) perIssuer[s.best.issuer] = (perIssuer[s.best.issuer] || 0) + 1;
   const top = Object.entries(perIssuer).sort((a, b) => b[1] - a[1])[0];
@@ -131,9 +130,52 @@ function renderIssuers(){
       <h3>${esc(i.name)}</h3>
       <p>${esc(i.about || "")}</p>
       <dl><div><dt>Stocks</dt><dd class="num">${V.length}</dd></div><div><dt>24h volume</dt><dd class="num">${fmtUsd(V.reduce((t, v) => t + (v.volume24h || 0), 0))}</dd></div></dl>
+      ${pegScore(i.id)}
       ${i.url ? `<a class="trade" href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.name)} website ↗</a>` : ""}
     </article>`;
   }).join("");
+}
+
+/* ---------- peg history: saved hourly by the server, read from /api/history ---------- */
+const peg = {issuers: null, tokens: new Map()};
+function loadPegScores(){
+  fetch("/api/history?p=issuers&days=7").then(r => r.json()).then(j => { peg.issuers = j; renderIssuers(); }).catch(() => {});
+}
+function pegScore(id){
+  const h = peg.issuers;
+  if (!h) return "";
+  const r = (h.issuers || []).find(x => x.id === id);
+  if (!r){
+    const noRatio = state.stocks.some(s => s.versions.some(v => v.issuer === id && v.ratioUnknown));
+    return `<p class="pegscore muted">${noRatio ? "No peg score: this issuer doesn’t publish its share ratios." : h.hours ? "No deep markets to score yet." : "Peg score starts once the first hourly reading is saved."}</p>`;
+  }
+  const since = h.since ? new Date(h.since).toLocaleDateString("en-US", {month: "short", day: "numeric"}) : "";
+  const young = h.hours < 24;
+  return `<div class="pegscore"><p class="eyebrow">Peg score${young ? " · early" : ""}</p>
+    <dl><div><dt>Typical gap</dt><dd class="num">±${(r.medianGap * 100).toFixed(2)}%</dd></div><div><dt>Within ±0.5%</dt><dd class="num">${r.withinFair == null ? "–" : Math.round(r.withinFair * 100) + "%"}</dd></div></dl>
+    <small>${young ? `Based on ${h.hours} hourly reading${h.hours === 1 ? "" : "s"} since ${since}. Firms up over the week.` : `Past ${h.days} days, ${h.hours} hourly readings, up to ${r.markets} markets over $10k.`}</small></div>`;
+}
+// Sparkline of one token's distance from its share: the dashed centre line is the peg.
+function sparkline(pts){
+  const W = 96, H = 26, P = 2, t0 = pts[0][0], t1 = pts[pts.length - 1][0] || t0 + 1;
+  const m = Math.max(0.005, ...pts.map(p => Math.abs(p[1])));
+  const x = t => P + (W - 2 * P) * (t1 === t0 ? 1 : (t - t0) / (t1 - t0)), y = g => H / 2 - (H / 2 - P) * g / m;
+  const d = pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + " " + y(p[1]).toFixed(1)).join("");
+  const typ = [...pts.map(p => Math.abs(p[1]))].sort((a, b) => a - b)[pts.length >> 1];
+  const days = Math.max(1, Math.round((t1 - t0) / 864e5));
+  const label = `Peg history, ${pts.length} hourly readings over ${days} day${days === 1 ? "" : "s"}: typically ±${(typ * 100).toFixed(2)}% from the share`;
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${label}"><title>${label}</title>
+    <path d="M${P} ${H / 2}H${W - P}" class="spark-peg"/><path d="${d}" class="spark-line"/><circle cx="${x(pts[pts.length - 1][0]).toFixed(1)}" cy="${y(pts[pts.length - 1][1]).toFixed(1)}" r="2.2" class="spark-dot"/></svg>`;
+}
+function fillSparks(){
+  document.querySelectorAll(".sparkcell[data-vid]").forEach(el => {
+    const vid = el.dataset.vid, have = peg.tokens.get(vid);
+    const draw = pts => { el.innerHTML = pts && pts.length >= 3 ? sparkline(pts.slice(-24 * 7)) : '<small class="muted">History starting</small>'; };
+    if (have !== undefined){ if (have !== "loading") draw(have); return; }
+    peg.tokens.set(vid, "loading");
+    fetch("/api/history?v=" + encodeURIComponent(vid)).then(r => r.json()).then(j => { peg.tokens.set(vid, j.points || []); fillSparks(); })
+      .catch(() => { peg.tokens.set(vid, []); fillSparks(); });
+  });
 }
 
 function filtered(){
@@ -158,12 +200,13 @@ function detailRow(s){
       <td>${chainTag(v.chain)}</td>
       <td class="r num">${fmtPrice(v.onchain)}${v.ratioUnknown ? '<small class="sub2">ratio not published</small>' : v.multiplier && Math.abs(v.multiplier - 1) > 1e-6 ? `<small class="sub2">${v.multiplier.toFixed(4)} shares</small>` : ""}</td>
       <td class="r">${gapPill(v, s.stale)}</td>
+      <td class="hm sparkcell" data-vid="${esc(vidOf(v))}"></td>
       <td class="r num hm">${fmtUsd(v.liquidity)}${v.thin && v.onchain != null ? '<small class="sub2 warn">thin</small>' : ""}</td>
       <td class="r num hm">${fmtUsd(v.volume24h)}</td>
       <td class="r"><div class="acts">${v.url ? `<a class="trade" href="${esc(v.url)}" target="_blank" rel="noopener" aria-label="View the ${esc(v.symbol)} market">Market ↗</a>` : ""}${bell("g_" + vidOf(v), `Telegram alert when ${v.symbol} on ${chainName(v.chain)} drifts from the share price`)}</div></td>
     </tr>`).join("");
   return `<tr class="detail"><td colspan="6"><div class="lbdetail">
-    <table class="lbsub"><thead><tr><th>Token</th><th>Chain</th><th class="r">On chain</th><th class="r">Gap</th><th class="r hm">Depth</th><th class="r hm">24h volume</th><th class="r"><span class="visually-hidden">Link</span></th></tr></thead><tbody>${rows}</tbody></table>
+    <table class="lbsub"><thead><tr><th>Token</th><th>Chain</th><th class="r">On chain</th><th class="r">Gap</th><th class="hm">Peg history</th><th class="r hm">Depth</th><th class="r hm">24h volume</th><th class="r"><span class="visually-hidden">Link</span></th></tr></thead><tbody>${rows}</tbody></table>
     <p class="lbfoot">Gap compares each token with the share price × its share ratio (the shares one token stands for after dividends and splits). Where an issuer doesn’t publish its ratio we assume one share, so the gap can be off by past dividends. Depth and volume are for the token’s markets on that chain.</p>
   </div></td></tr>`;
 }
@@ -191,6 +234,7 @@ function renderTable(){
   set("count", `Showing ${shown.length} of ${list.length} stocks`);
   $("showMore").hidden = list.length <= state.limit;
   fitDetail();
+  if (state.open) fillSparks();
   document.querySelectorAll("th button[data-sort]").forEach(b => {
     const on = b.dataset.sort === state.sort;
     b.closest("th").setAttribute("aria-sort", on ? (state.dir > 0 ? "ascending" : "descending") : "none");
@@ -357,6 +401,7 @@ if ($("spreadRows")){
 const deep = new URLSearchParams(location.search).get("s");
 if (deep && /^[A-Za-z0-9.]{1,12}$/.test(deep)) state.deep = deep.toUpperCase();
 
+if ($("issuers")) loadPegScores();
 load().then(spotTick);
 setInterval(() => { if (!document.hidden) load(); }, 120000);
 })();

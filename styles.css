@@ -205,6 +205,17 @@ tr.detail:hover{background:transparent}
 .issuer dl{margin:8px 0 6px;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:12px;border-top:1px solid var(--line)}
 .issuer dt{font:500 10.5px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .issuer dd{margin:4px 0 0;font:500 18px var(--mono)}
+.pegscore{margin-top:2px;padding:12px 14px;border-radius:10px;background:rgba(var(--accent-rgb),.06);border:1px solid rgba(var(--accent-rgb),.22)}
+.pegscore .eyebrow{color:var(--accent)}
+.pegscore dl{margin:6px 0 4px;padding-top:0;border-top:0}
+.pegscore dd{color:var(--ink)}
+.pegscore small{display:block;color:var(--muted);font-size:12px;line-height:1.4}
+p.pegscore{background:none;border:1px dashed var(--line);font-size:13px}
+.sparkcell{min-width:104px;vertical-align:middle}
+.spark{display:block;overflow:visible}
+.spark-peg{stroke:var(--accent-2);stroke-width:1.5;stroke-dasharray:1 4;stroke-linecap:round;fill:none}
+.spark-line{stroke:var(--accent);stroke-width:1.6;fill:none;stroke-linejoin:round;stroke-linecap:round}
+.spark-dot{fill:var(--accent)}
 .steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .steps > *{padding:26px 24px}
 .steps p{margin:0;color:var(--muted);font-size:14.5px}
