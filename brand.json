@@ -1,12 +1,12 @@
 {
   "_note": "Everything that names or colors the site lives here. Change it, then run: python3 build.py",
-  "name": "Tickerwave",
+  "name": "Pegwatch",
   "wordmark": [
-    "TICKER",
-    "WAVE"
+    "PEG",
+    "WATCH"
   ],
-  "tagline": "Every stock token, on every chain.",
-  "description": "Tokenized stocks on Robinhood Chain, Solana, Ethereum and more, compared side by side: price against the real share, market depth and volume, live.",
+  "tagline": "Every stock token, held to its share price.",
+  "description": "Same stock, different price. Tokenized stocks on Robinhood Chain, Solana, Ethereum and more, checked against the real share: how far each token trades from its peg, market depth and volume, live.",
   "domain": "tickerwave.vercel.app",
   "x": "",
   "telegram": "TickerwaveAlertsBot",

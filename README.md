@@ -1,4 +1,4 @@
-# Tickerwave (working title)
+# Pegwatch
 
 Stock tokens on every chain, compared. For each stock, every tokenized version (Robinhood Chain, Solana, Ethereum and more) side by side: on-chain price against the real share, market depth and 24h volume.
 

@@ -1,5 +1,5 @@
 {
-  "name": "tickerwave",
+  "name": "pegwatch",
   "private": true,
   "description": "Stock tokens on every chain, compared. Static pages built by build.py from brand.json, plus Vercel functions in /api.",
   "dependencies": {

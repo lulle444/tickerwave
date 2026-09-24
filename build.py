@@ -37,11 +37,13 @@ open(os.path.join(ROOT, "brand.css"), "w").write("/* Written by build.py from br
 FONTS_URL = "https://fonts.googleapis.com/css2?" + "&".join(
     "family=" + F[k].replace(" ", "+") + ":wght@" + w for k, w in (("display", "500;600;700"), ("body", "400;500;600"), ("mono", "400;500;600"))) + "&display=swap"
 
-# ---------- logo mark: a wave that turns into a rising price line ----------
+# ---------- logo mark: a price line swinging around its dashed peg ----------
 LOGO = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <rect width="64" height="64" rx="14" fill="{C['panel2']}"/>
   <rect x=".75" y=".75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="{C['line']}" stroke-width="1.5"/>
-  <path d="M9 41c5 0 6-8 11-8s6 8 11 8l8-14 6 6 10-15" fill="none" stroke="{C['accent']}" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M9 32h46" stroke="{C['accent2']}" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 6.2"/>
+  <path d="M9 40c5 0 6-19 12-19s7 22 13 22 6-15 11-15c3.5 0 5 4 6.5 4" fill="none" stroke="{C['accent']}" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="52" cy="32" r="4.4" fill="{C['accent']}"/>
 </svg>
 """
 open(os.path.join(ROOT, "assets", "logo-mark.svg"), "w").write(LOGO)

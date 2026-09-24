@@ -1,4 +1,4 @@
-/* Tickerwave: a dark trading-desk look. Colors and fonts come from brand.css, which build.py writes from brand.json. */
+/* Pegwatch: a dark trading-desk look. Colors and fonts come from brand.css, which build.py writes from brand.json. */
 [hidden]{display:none!important}
 :root{
   color-scheme: dark;
