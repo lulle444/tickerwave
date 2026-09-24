@@ -22,6 +22,10 @@ const fmtPrice = v => v == null || !isFinite(v) ? "–" : "$" + v.toLocaleString
 const fmtGap = g => g == null ? "–" : (g > 0 ? "+" : g < 0 ? "−" : "") + Math.abs(g * 100).toFixed(2) + "%";
 const bandOf = g => g == null ? "none" : g > FAIR ? "premium" : g < -FAIR ? "discount" : "fair";
 
+const BOT = document.body.dataset.bot || "";   // Telegram bot username from brand.json; empty hides the bells
+const BELL = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+const vidOf = v => `${v.symbol}_${v.chain}`.replace(/\./g, "-");
+const bell = (start, label) => BOT ? `<a class="bell" href="https://t.me/${BOT}?start=${encodeURIComponent(start)}" target="_blank" rel="noopener" title="${esc(label)}" aria-label="${esc(label)}">${BELL}</a>` : "";
 const state = {stocks:[], chains:[], issuers:[], chain:"all", multi:false, q:"", sort:"volume24h", dir:-1, limit:PAGE, open:null, paused:false};
 const chainName = id => (state.chains.find(c => c.id === id) || {}).name || id;
 const issuerOf = id => state.issuers.find(i => i.id === id) || {id, name: id};
@@ -67,6 +71,8 @@ async function load(){
   } catch (e) {
     $("dot").className = "dot sample";
     set("sourceText", "Data unavailable");
+    if ($("spreadRows")) $("spreadRows").innerHTML = `<tr><td colspan="6" class="empty">Live prices couldn’t be loaded right now. Please try again in a minute.</td></tr>`;
+    if ($("chainGrid")) $("chainGrid").innerHTML = `<p class="muted">Live data couldn’t be loaded right now. Please try again in a minute.</p>`;
     if ($("rows")){
       set("mkt", "Prices are temporarily unavailable.");
       $("rows").innerHTML = `<tr><td colspan="6" class="empty">Live prices couldn’t be loaded right now. Please try again in a minute.</td></tr>`;
@@ -120,7 +126,7 @@ function renderIssuers(){
   box.innerHTML = state.issuers.map(i => {
     const V = state.stocks.flatMap(s => s.versions.filter(v => v.issuer === i.id));
     const chains = [...new Set(V.map(v => v.chain))].map(chainName);
-    return `<article class="glass issuer">
+    return `<article class="panel issuer">
       <p class="eyebrow">${esc(chains.join(" · "))}</p>
       <h3>${esc(i.name)}</h3>
       <p>${esc(i.about || "")}</p>
@@ -154,7 +160,7 @@ function detailRow(s){
       <td class="r">${gapPill(v, s.stale)}</td>
       <td class="r num hm">${fmtUsd(v.liquidity)}${v.thin && v.onchain != null ? '<small class="sub2 warn">thin</small>' : ""}</td>
       <td class="r num hm">${fmtUsd(v.volume24h)}</td>
-      <td class="r">${v.url ? `<a class="trade" href="${esc(v.url)}" target="_blank" rel="noopener" aria-label="View the ${esc(v.symbol)} market">Market ↗</a>` : ""}</td>
+      <td class="r"><div class="acts">${v.url ? `<a class="trade" href="${esc(v.url)}" target="_blank" rel="noopener" aria-label="View the ${esc(v.symbol)} market">Market ↗</a>` : ""}${bell("g_" + vidOf(v), `Telegram alert when ${v.symbol} on ${chainName(v.chain)} drifts from the share price`)}</div></td>
     </tr>`).join("");
   return `<tr class="detail"><td colspan="6"><div class="lbdetail">
     <table class="lbsub"><thead><tr><th>Token</th><th>Chain</th><th class="r">On chain</th><th class="r">Gap</th><th class="r hm">Depth</th><th class="r hm">24h volume</th><th class="r"><span class="visually-hidden">Link</span></th></tr></thead><tbody>${rows}</tbody></table>
@@ -234,10 +240,84 @@ function spotTick(){
   spot.timer = setInterval(() => { if (!document.hidden && spot.list.length > 1){ spot.i = (spot.i + 1) % spot.list.length; renderSpot(); } }, 6000);
 }
 
+
+/* ---------- spreads page ---------- */
+const median = a => { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+function spreadOf(s, min){
+  const vs = s.versions.filter(v => v.gap != null && v.liquidity >= min && !v.halted);
+  if (vs.length < 2) return null;
+  const lo = vs.reduce((a, b) => b.gap < a.gap ? b : a), hi = vs.reduce((a, b) => b.gap > a.gap ? b : a);
+  return {s, lo, hi, spread: hi.gap - lo.gap, depth: Math.min(lo.liquidity, hi.liquidity)};
+}
+const side = v => `<b class="num">${esc(v.symbol)}</b> ${chainTag(v.chain)}<small class="sub2">${fmtPrice(v.onchain)} · ${fmtGap(v.gap)} vs share</small>`;
+function renderSpreads(){
+  const min = +($("minDepth") || {}).value || THIN, q = state.q.trim().toLowerCase();
+  const all = state.stocks.map(s => spreadOf(s, min)).filter(Boolean).sort((a, b) => b.spread - a.spread);
+  const list = all.filter(x => !q || x.s.ticker.toLowerCase().includes(q) || (x.s.name || "").toLowerCase().includes(q));
+  set("pStocks", all.length);
+  set("pStocksSub", `trade on 2+ chains, ${fmtUsd(min).replace(".0k", "k").replace(".0M", "M")}+ deep`);
+  const w = all[0];
+  set("pWide", w ? fmtGap(w.spread).replace("+", "") : "–");
+  set("pWideSub", w ? `${w.s.ticker}: ${w.lo.symbol} vs ${w.hi.symbol}` : "–");
+  const med = median(all.map(x => x.spread));
+  set("pMedian", med == null ? "–" : fmtGap(med).replace("+", ""));
+  set("pMedianSub", "Median across these stocks");
+  const over = all.filter(x => x.spread >= 0.01).length;
+  set("pOver", over);
+  set("pOverSub", all.length ? `${Math.round(over / all.length * 100)}% of stocks compared` : "–");
+  $("spreadRows").innerHTML = list.length ? list.map(x => `<tr>
+      <td><a class="ticker plain" href="/?s=${encodeURIComponent(x.s.ticker)}">${x.s.logo ? `<img src="${esc(x.s.logo)}" alt="" width="30" height="30" loading="lazy" onerror="this.remove()">` : ""}<span class="proto"><b class="asset">${esc(x.s.ticker)}</b><span>${esc(x.s.name)}</span></span></a></td>
+      <td class="r"><span class="gap ${x.spread >= 0.01 ? "premium" : x.spread >= FAIR ? "warn" : "fair"}"><span class="num">${fmtGap(x.spread).replace("+", "")}</span></span></td>
+      <td>${side(x.lo)}</td>
+      <td>${side(x.hi)}</td>
+      <td class="r num">${fmtUsd(x.depth)}</td>
+      <td class="r">${bell("s_" + x.s.ticker.replace(/\./g, "-"), `Telegram alert when ${x.s.ticker}'s spread widens`)}</td>
+    </tr>`).join("") : `<tr><td colspan="6" class="empty">No stock trades in two markets this deep right now.</td></tr>`;
+  set("count", `${list.length} stocks`);
+}
+
+/* ---------- chains page ---------- */
+function renderChains(){
+  const V = state.stocks.flatMap(s => s.versions.map(v => ({...v, ticker: s.ticker, stale: s.stale})));
+  $("chainGrid").innerHTML = state.chains.map(c => {
+    const vs = V.filter(v => v.chain === c.id && v.onchain != null);
+    const deep = vs.filter(v => v.gap != null && !v.thin);
+    const track = median(deep.map(v => Math.abs(v.gap)));
+    const issuers = [...new Set(vs.map(v => issuerOf(v.issuer).short || issuerOf(v.issuer).name))];
+    const top = vs.slice().sort((a, b) => (b.volume24h || 0) - (a.volume24h || 0)).slice(0, 4);
+    return `<article class="panel chaincard">
+      <header><span class="chaintag c-${esc(c.id)}">${esc(c.name)}</span><span class="muted">${esc(issuers.join(" · "))}</span></header>
+      <dl>
+        <div><dt>Stocks trading</dt><dd class="num">${vs.length}</dd></div>
+        <div><dt>24h volume</dt><dd class="num">${fmtUsd(vs.reduce((t, v) => t + (v.volume24h || 0), 0))}</dd></div>
+        <div><dt>Market depth</dt><dd class="num">${fmtUsd(vs.reduce((t, v) => t + (v.liquidity || 0), 0))}</dd></div>
+        <div><dt>Typical gap</dt><dd class="num">${track == null ? "–" : "±" + (track * 100).toFixed(2) + "%"}</dd></div>
+      </dl>
+      <p class="toplabel">Most traded</p>
+      <ul class="toplist">${top.map(v => `<li><a href="/?s=${encodeURIComponent(v.ticker)}"><b class="num">${esc(v.symbol)}</b><span class="num">${fmtUsd(v.volume24h)}</span></a></li>`).join("")}</ul>
+    </article>`;
+  }).join("");
+  $("matrixHead").innerHTML = `<tr><th>Issuer</th>${state.chains.map(c => `<th class="r">${esc(c.name)}</th>`).join("")}</tr>`;
+  $("matrixRows").innerHTML = state.issuers.map(i => `<tr><th scope="row">${esc(i.name)}</th>${state.chains.map(c => {
+    const vs = V.filter(v => v.issuer === i.id && v.chain === c.id && v.onchain != null);
+    return `<td class="r">${vs.length ? `<b class="num">${vs.length}</b><small class="sub2">${fmtUsd(vs.reduce((t, v) => t + (v.volume24h || 0), 0))}</small>` : '<span class="muted">–</span>'}</td>`;
+  }).join("")}</tr>`).join("");
+}
+
 function render(){
   renderTape();
+  if ($("mkt")) renderMarket();
+  if ($("issuers")) renderIssuers();
+  if ($("spreadRows")) renderSpreads();
+  if ($("chainGrid")) renderChains();
   if (!$("rows")) return;
-  pickSpot(); renderSpot(); renderChips(); renderGauge(); renderMarket(); renderTable(); renderIssuers();
+  if (state.deep){   // /?s=TSLA (links from alerts and other pages) opens that stock, whatever the filters
+    const i = filtered().sort((a, b) => (b.volume24h ?? -1) - (a.volume24h ?? -1)).findIndex(r => r.ticker === state.deep);
+    if (i >= 0){ state.open = state.deep; state.limit = Math.max(PAGE, Math.ceil((i + 1) / PAGE) * PAGE); }
+  }
+  pickSpot(); renderSpot(); renderChips(); renderGauge(); renderTable();
+  if (state.deep && state.open){ $("rows").querySelector("tr.detail")?.scrollIntoView({block: "center"}); }
+  state.deep = null;
 }
 
 /* ---------- events ---------- */
@@ -269,6 +349,13 @@ if ($("rows")){
   $("multi").addEventListener("change", e => { state.multi = e.target.checked; state.limit = PAGE; renderTable(); });
   $("q").addEventListener("input", e => { state.q = e.target.value; state.limit = PAGE; renderTable(); });
 }
+
+if ($("spreadRows")){
+  $("q").addEventListener("input", e => { state.q = e.target.value; renderSpreads(); });
+  $("minDepth").addEventListener("change", renderSpreads);
+}
+const deep = new URLSearchParams(location.search).get("s");
+if (deep && /^[A-Za-z0-9.]{1,12}$/.test(deep)) state.deep = deep.toUpperCase();
 
 load().then(spotTick);
 setInterval(() => { if (!document.hidden) load(); }, 120000);

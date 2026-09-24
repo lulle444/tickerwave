@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Learn · Tickerwave</title>
+<meta name="description" content="Stock tokens explained: share ratios, price gaps, chains and five checks before you trade.">
+<link rel="canonical" href="{site}/learn">
+<link rel="icon" type="image/svg+xml" href="/assets/logo-mark.svg">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:title" content="Learn · Tickerwave">
+<meta property="og:description" content="Stock tokens explained: share ratios, price gaps, chains and five checks before you trade.">
+<meta property="og:url" content="{site}/learn">
+<meta property="og:image" content="{site}/api/og?p=home">
+<meta name="twitter:image" content="{site}/api/og?p=home">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#07080D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/brand.css">
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="tape" id="tape" aria-label="Live stock-token prices"><div class="tape-track" id="tapeTrack"></div></div>
+<div class="wrap">
+  <nav class="nav" aria-label="Main">
+    <a class="logo" href="/" aria-label="Tickerwave home"><img src="/assets/logo-mark.svg" alt="" width="36" height="36"><span class="word">TICKER<b>WAVE</b></span></a>
+    <div class="navlinks">
+      <a href="/">Stocks</a>
+      <a href="/spreads">Spreads</a>
+      <a href="/chains">Chains</a>
+      <a href="/alerts">Alerts</a>
+      <a href="/learn" aria-current="page">Learn</a>
+    </div>
+    <div class="source" id="source"><span class="dot" id="dot"></span><span id="sourceText">Loading data…</span></div>
+  </nav>
+  <div class="mobilenav" aria-label="Sections">
+    <a href="/">Stocks</a>
+    <a href="/spreads">Spreads</a>
+    <a href="/chains">Chains</a>
+    <a href="/alerts">Alerts</a>
+    <a href="/learn" aria-current="page">Learn</a>
+  </div>
+
+  <header class="pagehead">
+    <div>
+      <p class="eyebrow">Learn</p>
+      <h1>Stock tokens, <em>explained.</em></h1>
+      <p class="lede">What a stock token is, why the same stock can cost different amounts on different chains, and what to check before you trade one.</p>
+    </div>
+  </header>
+
+  <div class="learn">
+    <article class="panel note-card">
+      <p class="eyebrow">01 · Basics</p>
+      <h3>What is a stock token?</h3>
+      <p>A token on a blockchain that follows the price of one share of a real company or fund. An issuer buys the shares and holds them with a custodian, then mints tokens against them. Approved partners can mint new tokens by handing over money, or redeem tokens for money, at the share price.</p>
+      <p>Holding a token gives you the price exposure. It usually does not make you a shareholder: no votes, and dividends are handled by the issuer.</p>
+    </article>
+    <article class="panel note-card">
+      <p class="eyebrow">02 · Share ratio</p>
+      <h3>Why one token isn’t always one share</h3>
+      <p>When a company pays a dividend, many issuers reinvest it by raising the number of shares each token stands for, instead of paying cash. After a year a token might equal 1.005 shares. Splits change the ratio too.</p>
+      <p>That is why we compare each token with the share price × its ratio, not the raw share price. Where an issuer doesn’t publish its ratio, we say so next to the token.</p>
+    </article>
+    <article class="panel note-card">
+      <p class="eyebrow">03 · Gaps</p>
+      <h3>Why tokens drift from the share</h3>
+      <p>Minting and redeeming pull a token back toward the share price, because partners profit from closing a gap. But that takes time and costs fees, so small gaps remain. Thin markets drift more, since one trade moves them.</p>
+      <p>Tokens trade around the clock. When the US market is closed the share price stands still, so a gap then shows where traders expect the stock to open.</p>
+    </article>
+    <article class="panel note-card">
+      <p class="eyebrow">04 · Chains</p>
+      <h3>Same stock, many versions</h3>
+      <p>Robinhood issues on its own chain, xStocks mostly on Solana, Ondo on Ethereum and BNB Chain. Each version trades in its own markets, so their prices differ a little. Our <a href="/spreads">spreads page</a> shows how much.</p>
+      <p>Versions from different issuers are not interchangeable: you can’t redeem an xStock with Ondo.</p>
+    </article>
+  </div>
+
+  <section class="block panel note-card" id="checklist" aria-labelledby="checkH">
+    <p class="eyebrow">Before you trade</p>
+    <h2 id="checkH" style="font-size:26px">Five checks</h2>
+    <ol class="checklist">
+      <li><b>Are you allowed to hold it?</b> Most stock tokens are closed to US persons and restricted in some other countries.</li>
+      <li><b>Who is the issuer?</b> Read how the shares are held and who can redeem.</li>
+      <li><b>How deep is the market?</b> Under $10k, a single trade can move the price by several percent.</li>
+      <li><b>Is the US market open?</b> On weekends and holidays the share price is frozen and gaps widen.</li>
+      <li><b>What does it cost to get there?</b> Bridging, swaps and network fees can eat a small price advantage.</li>
+    </ol>
+  </section>
+
+  <footer class="sitefoot">
+    <div class="footgrid">
+      <div class="footbrand">
+        <a class="logo" href="/" aria-label="Tickerwave home"><img src="/assets/logo-mark.svg" alt="" width="26" height="26"><span class="word">TICKER<b>WAVE</b></span></a>
+        <p>Every stock token, on every chain. Independent, read-only and free. Live on-chain data, no paid placements.</p>
+      </div>
+      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
+      <nav aria-label="Learn"><h4>Learn</h4><a href="/learn">Stock tokens explained</a><a href="/learn#checklist">Before you trade</a><a href="/#how">How we calculate</a></nav>
+      <nav aria-label="Company"><h4>Company</h4><a href="/about">About</a><a href="/about#disclaimer">Disclaimer</a></nav>
+    </div>
+    <div class="footbase">
+      <span>© 2026 Tickerwave. Not financial advice. Stock tokens are not the shares themselves.</span>
+      <span id="updated"></span>
+    </div>
+  </footer>
+</div>
+<script src="/board.js"></script>
+<script src="/backdrop.js"></script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

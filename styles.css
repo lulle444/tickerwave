@@ -141,6 +141,7 @@ section{scroll-margin-top:90px}
 .field.check input{width:16px;height:16px;accent-color:var(--accent);margin:0}
 input[type=search]{font:14px var(--body);color:var(--ink);background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;min-width:0;width:220px}
 input[type=search]::placeholder{color:var(--muted)}
+select{font:14px var(--body);color:var(--ink);background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .tablebox{position:relative;overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--bg-2)}
 table{width:100%;border-collapse:collapse;min-width:760px}
 th,td{padding:14px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
@@ -226,10 +227,11 @@ tr.detail:hover{background:transparent}
 .note-card{padding:24px}
 .note-card p{color:var(--muted);font-size:14.5px;margin:0 0 12px}
 .note-card p:last-child{margin-bottom:0}
+.note-card p.eyebrow{font-size:12px;color:var(--accent);margin-bottom:12px}
 
 /* footer */
 .sitefoot{margin-top:104px;padding-top:36px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
-.footgrid{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(2,minmax(0,1fr));gap:28px}
+.footgrid{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));gap:28px}
 .footbrand p{margin:14px 0;max-width:40ch}
 .footgrid nav{display:flex;flex-direction:column;gap:9px}
 .footgrid h4{margin:0 0 4px;font:500 11px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
@@ -239,3 +241,43 @@ tr.detail:hover{background:transparent}
 .footbase{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;font-size:12px}
 @media (max-width:700px){.footgrid{grid-template-columns:1fr 1fr}.footbrand{grid-column:1/-1}}
 .spotrow .g.fair{color:var(--accent)} .spotrow .g.discount{color:var(--up)} .spotrow .g.premium{color:var(--down)}
+
+/* alerts bell, links in tables */
+.acts{display:inline-flex;align-items:center;gap:12px;justify-content:flex-end}
+.bell{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:7px;border:1px solid var(--line);color:var(--muted);text-decoration:none}
+.bell:hover{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+a.ticker{display:flex;align-items:center;gap:12px;min-width:0;text-decoration:none;color:var(--ink)}
+a.ticker img{width:30px;height:30px;border-radius:8px;flex:none;background:var(--panel-2);object-fit:cover}
+a.ticker:hover .asset{color:var(--accent)}
+.gap.warn{background:rgba(245,185,74,.12);color:var(--warn)}
+td .chaintag{margin-left:6px;vertical-align:1px}
+
+/* chains page */
+.chaingrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.chaincard{padding:20px;display:flex;flex-direction:column;gap:14px}
+.chaincard header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.chaincard header .chaintag{font-size:13px;padding:7px 10px}
+.chaincard dl{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chaincard dt{font:500 10.5px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chaincard dd{margin:4px 0 0;font:500 19px var(--mono)}
+.toplabel{margin:4px 0 -6px;font:500 10.5px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.toplist{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.toplist li{border-bottom:1px solid var(--line)}
+.toplist a{display:flex;justify-content:space-between;padding:8px 0;color:var(--ink);text-decoration:none;font-size:13.5px}
+.toplist a:hover b{color:var(--accent)}
+.toplist span{color:var(--muted)}
+table.matrix{min-width:560px}
+table.matrix tbody th{font:600 14px var(--display);letter-spacing:0;text-transform:none;color:var(--ink);background:transparent}
+
+/* learn + alerts */
+.learn{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
+@media (max-width:820px){.learn{grid-template-columns:minmax(0,1fr)}}
+.learn h3{font-size:21px;margin-bottom:10px}
+.checklist{margin:14px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:10px;color:var(--muted);font-size:14.5px}
+.checklist b{color:var(--ink)}
+.checklist li::marker{color:var(--accent);font-family:var(--mono)}
+.alertcard h3{font-size:21px}
+.cmd code{display:inline-block;font:500 14px var(--mono);color:var(--accent);background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:8px 12px}
+.alertcta{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;padding:30px}
+.alertcta > div{max-width:62ch}
+.pagehead h1 em{font-style:normal;color:var(--accent)}

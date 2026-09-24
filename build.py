@@ -78,7 +78,7 @@ HEAD = """<!doctype html>
 <div class="wrap">
 """
 
-NAV_ITEMS = [("/", "Stocks"), ("/#chains", "Chains"), ("/#how", "How it works"), ("/about", "About")]
+NAV_ITEMS = [("/", "Stocks"), ("/spreads", "Spreads"), ("/chains", "Chains"), ("/alerts", "Alerts"), ("/learn", "Learn")]
 
 
 def nav(path):
@@ -106,7 +106,8 @@ FOOT = """
         <a class="logo" href="/" aria-label="{{name}} home"><img src="/assets/logo-mark.svg" alt="" width="26" height="26"><span class="word">{{w1}}<b>{{w2}}</b></span></a>
         <p>{{tagline}} Independent, read-only and free. Live on-chain data, no paid placements.</p>""" + X_LINK + """
       </div>
-      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/#chains">Chains and issuers</a><a href="/#how">How it works</a></nav>
+      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
+      <nav aria-label="Learn"><h4>Learn</h4><a href="/learn">Stock tokens explained</a><a href="/learn#checklist">Before you trade</a><a href="/#how">How we calculate</a></nav>
       <nav aria-label="Company"><h4>Company</h4><a href="/about">About</a><a href="/about#disclaimer">Disclaimer</a></nav>
     </div>
     <div class="footbase">
@@ -259,9 +260,166 @@ NOTFOUND = pagehead("Page not found", "This ticker isn’t listed.",
   </div>
 """
 
-OG = {"/": "/api/og?p=home"}
+BELL_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>'
+BOT = B.get("telegram") or ""
+
+SPREADS = pagehead("Spreads", "Same stock. <em>Different price.</em>",
+  "When one stock trades as tokens on several chains, the versions rarely cost exactly the same. Here is how far apart the cheapest and the priciest token of each stock are right now, counting only markets deep enough to trade.") + """
+  <section class="stats panel" aria-label="Key figures">
+    <div><small>Stocks compared</small><strong id="pStocks">–</strong><span id="pStocksSub">&nbsp;</span></div>
+    <div><small>Widest spread</small><strong id="pWide">–</strong><span id="pWideSub">&nbsp;</span></div>
+    <div><small>Typical spread</small><strong id="pMedian">–</strong><span id="pMedianSub">&nbsp;</span></div>
+    <div><small>Over 1%</small><strong id="pOver">–</strong><span id="pOverSub">&nbsp;</span></div>
+  </section>
+
+  <section class="tablepanel panel" aria-labelledby="spreadH">
+    <div class="sectionhead">
+      <div><h2 id="spreadH">Cheapest vs. priciest token</h2><p class="mkt" id="mkt">Checking market hours…</p></div>
+    </div>
+    <div class="controls">
+      <label class="field" for="minDepth">Market depth
+        <select id="minDepth">
+          <option value="10000" selected>$10k+</option>
+          <option value="100000">$100k+</option>
+          <option value="1000000">$1M+</option>
+        </select>
+      </label>
+      <span class="grow"></span>
+      <input type="search" id="q" placeholder="Search ticker or company" aria-label="Search ticker or company">
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead><tr>
+          <th>Stock</th>
+          <th class="r">Spread</th>
+          <th>Cheapest</th>
+          <th>Priciest</th>
+          <th class="r">Thinner side</th>
+          <th class="r"><span class="visually-hidden">Alert</span></th>
+        </tr></thead>
+        <tbody id="spreadRows"><tr><td colspan="6" class="empty">Loading spreads…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="more"><span id="count"></span></div>
+  </section>
+
+  <div class="twocol block-sm">
+    <div class="panel note-card">
+      <p class="eyebrow">Read this first</p>
+      <h3>A spread is not free money</h3>
+      <p>Buying the cheap token and selling the expensive one means moving money between chains, paying fees on both sides and trusting two issuers. Many tokens can only be minted or redeemed by approved partners, and most are off limits to US persons.</p>
+      <p>Spreads also widen when the US market is closed: share prices freeze while tokens keep trading.</p>
+    </div>
+    <div class="panel note-card">
+      <p class="eyebrow">How we calculate</p>
+      <h3>Both sides measured against the share</h3>
+      <p>Each token’s gap is its on-chain price against the share price × its share ratio, so dividends and splits don’t count as a spread. The spread is the priciest gap minus the cheapest. Markets under $10k are left out.</p>
+    </div>
+  </div>
+"""
+
+CHAINSPAGE = pagehead("Chains", "Where stock tokens <em>trade.</em>",
+  "Every chain and issuer we track, side by side: how many stocks trade there, how much changes hands and how closely the tokens follow the real share.") + """
+  <section class="block-sm" aria-label="Chains">
+    <div class="chaingrid" id="chainGrid"><p class="muted">Loading chains…</p></div>
+  </section>
+
+  <section class="block" aria-labelledby="matrixH">
+    <div class="sectionhead"><div><p class="eyebrow">Issuer × chain</p><h2 id="matrixH">Who issues where</h2><p class="sub">Number of stocks with a live market, and their 24h volume.</p></div></div>
+    <div class="tablebox"><table class="matrix"><thead id="matrixHead"></thead><tbody id="matrixRows"><tr><td class="empty">Loading…</td></tr></tbody></table></div>
+  </section>
+
+  <section class="block" aria-labelledby="issuersH">
+    <div class="sectionhead"><div><p class="eyebrow">Issuers</p><h2 id="issuersH">Who holds the shares</h2><p class="sub">Each issuer buys and holds the real shares and mints tokens against them, with its own rules for who can mint, redeem and hold.</p></div></div>
+    <div class="issuergrid" id="issuers"></div>
+  </section>
+"""
+
+LEARN = pagehead("Learn", "Stock tokens, <em>explained.</em>",
+  "What a stock token is, why the same stock can cost different amounts on different chains, and what to check before you trade one.") + """
+  <div class="learn">
+    <article class="panel note-card">
+      <p class="eyebrow">01 · Basics</p>
+      <h3>What is a stock token?</h3>
+      <p>A token on a blockchain that follows the price of one share of a real company or fund. An issuer buys the shares and holds them with a custodian, then mints tokens against them. Approved partners can mint new tokens by handing over money, or redeem tokens for money, at the share price.</p>
+      <p>Holding a token gives you the price exposure. It usually does not make you a shareholder: no votes, and dividends are handled by the issuer.</p>
+    </article>
+    <article class="panel note-card">
+      <p class="eyebrow">02 · Share ratio</p>
+      <h3>Why one token isn’t always one share</h3>
+      <p>When a company pays a dividend, many issuers reinvest it by raising the number of shares each token stands for, instead of paying cash. After a year a token might equal 1.005 shares. Splits change the ratio too.</p>
+      <p>That is why we compare each token with the share price × its ratio, not the raw share price. Where an issuer doesn’t publish its ratio, we say so next to the token.</p>
+    </article>
+    <article class="panel note-card">
+      <p class="eyebrow">03 · Gaps</p>
+      <h3>Why tokens drift from the share</h3>
+      <p>Minting and redeeming pull a token back toward the share price, because partners profit from closing a gap. But that takes time and costs fees, so small gaps remain. Thin markets drift more, since one trade moves them.</p>
+      <p>Tokens trade around the clock. When the US market is closed the share price stands still, so a gap then shows where traders expect the stock to open.</p>
+    </article>
+    <article class="panel note-card">
+      <p class="eyebrow">04 · Chains</p>
+      <h3>Same stock, many versions</h3>
+      <p>Robinhood issues on its own chain, xStocks mostly on Solana, Ondo on Ethereum and BNB Chain. Each version trades in its own markets, so their prices differ a little. Our <a href="/spreads">spreads page</a> shows how much.</p>
+      <p>Versions from different issuers are not interchangeable: you can’t redeem an xStock with Ondo.</p>
+    </article>
+  </div>
+
+  <section class="block panel note-card" id="checklist" aria-labelledby="checkH">
+    <p class="eyebrow">Before you trade</p>
+    <h2 id="checkH" style="font-size:26px">Five checks</h2>
+    <ol class="checklist">
+      <li><b>Are you allowed to hold it?</b> Most stock tokens are closed to US persons and restricted in some other countries.</li>
+      <li><b>Who is the issuer?</b> Read how the shares are held and who can redeem.</li>
+      <li><b>How deep is the market?</b> Under $10k, a single trade can move the price by several percent.</li>
+      <li><b>Is the US market open?</b> On weekends and holidays the share price is frozen and gaps widen.</li>
+      <li><b>What does it cost to get there?</b> Bridging, swaps and network fees can eat a small price advantage.</li>
+    </ol>
+  </section>
+"""
+
+ALERTS_ON = """
+  <div class="twocol block-sm">
+    <div class="panel note-card alertcard">
+      <p class="eyebrow">Price gap</p>
+      <h3>When a token leaves the share price</h3>
+      <p>Pick a token, like TSLAx on Solana, and a level. We message you when it trades that far above or below the real share.</p>
+      <p class="cmd"><code>/gap TSLAx 1</code></p>
+    </div>
+    <div class="panel note-card alertcard">
+      <p class="eyebrow">Spread</p>
+      <h3>When chains disagree</h3>
+      <p>Pick a stock and a level. We message you when its cheapest and priciest tokens across chains are that far apart.</p>
+      <p class="cmd"><code>/spread TSLA 1</code></p>
+    </div>
+  </div>
+  <section class="block-sm panel note-card alertcta">
+    <div>
+      <p class="eyebrow">Telegram</p>
+      <h2 style="font-size:26px">Free, no sign-up</h2>
+      <p>Open the bot, tap Start and send a command, or tap 🔔 next to any token on the <a href="/">stock board</a> or any stock on <a href="/spreads">spreads</a>. We check every 5 minutes while the US market trades. Send /list to see or remove your alerts.</p>
+    </div>
+    <a class="btn primary" href="https://t.me/""" + BOT + """" target="_blank" rel="noopener">""" + BELL_SVG + """ Open @""" + BOT + """</a>
+  </section>
+"""
+ALERTS_SOON = """
+  <section class="block-sm panel note-card alertcta">
+    <div>
+      <p class="eyebrow">Coming soon</p>
+      <h2 style="font-size:26px">Alerts are almost ready</h2>
+      <p>Soon you can get a Telegram message when a token trades away from its share price, or when the same stock is priced differently across chains. Free, no sign-up.</p>
+    </div>
+  </section>
+"""
+ALERTS = pagehead("Alerts", "Hear it <em>first.</em>",
+  "Get a Telegram message the moment a stock token trades away from its share price, or when the same stock is priced differently across chains.") + (ALERTS_ON if BOT else ALERTS_SOON)
+
+OG = {"/": "/api/og?p=home", "/spreads": "/api/og?p=spreads"}
 PAGES = [
   ("index.html", "/", "{{name}} · Stock tokens on every chain", "{desc}", "", HOME, "board.js"),
+  ("spreads.html", "/spreads", "Spreads · {{name}}", "The same stock, priced differently across chains: the cheapest and priciest token of every stock, live.", "", SPREADS, "board.js"),
+  ("chains.html", "/chains", "Chains · {{name}}", "Robinhood Chain, Solana, Ethereum and BNB Chain compared: stock tokens, volume and how closely they track the share.", "", CHAINSPAGE, "board.js"),
+  ("alerts.html", "/alerts", "Alerts · {{name}}", "Free Telegram alerts when a stock token trades away from its share price or chains disagree.", "", ALERTS, "board.js"),
+  ("learn.html", "/learn", "Learn · {{name}}", "Stock tokens explained: share ratios, price gaps, chains and five checks before you trade.", "", LEARN, "board.js"),
   ("about.html", "/about", "About · {{name}}", "What {{name}} is, where its data comes from, and the disclaimer.", "", ABOUT, "board.js"),
   ("404.html", "/404", "Page not found · {{name}}", "This page doesn’t exist. Compare stock tokens across every chain instead.", "", NOTFOUND, "board.js"),
 ]
@@ -269,6 +427,7 @@ PAGES = [
 xsite = f'\n<meta name="twitter:site" content="@{B["x"]}">' if B["x"] else ""
 for fn, path, title, desc, attrs, body, script in PAGES:
     desc = desc.replace("{desc}", B["description"])
+    attrs += f' data-bot="{BOT}"' if BOT else ""
     extra = ""
     if path == "/":
         same = f',"sameAs":["https://x.com/{B["x"]}"]' if B["x"] else ""
@@ -283,5 +442,5 @@ for fn, path, title, desc, attrs, body, script in PAGES:
     print(fn, len(html))
 
 open(os.path.join(ROOT, "sitemap.xml"), "w").write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    + "".join(f"  <url><loc>{SITE}{p}</loc></url>\n" for p in ("/", "/about")) + "</urlset>\n")
+    + "".join(f"  <url><loc>{SITE}{p}</loc></url>\n" for _, p, *_ in PAGES if p != "/404") + "</urlset>\n")
 open(os.path.join(ROOT, "robots.txt"), "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\n")

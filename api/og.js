@@ -1,7 +1,7 @@
 // Share-preview image (1200×630 PNG) with today's numbers: /api/og?p=home.
 // Pages point their og:image here; X and others fetch it when a link is shared. Name, colors and logo come from brand.json.
 const B = require("../brand.json");
-const {currentBoard} = require("../lib/board");
+const {currentBoard, spreadOf} = require("../lib/board");
 const fs = require("fs"), path = require("path");
 
 let logo;
@@ -51,6 +51,19 @@ const CARDS = {
       label: `stocks tokenized across ${chains.length} chains, ${fmtN(multi)} of them on more than one`,
       stats: [[fmtN(V.length), "token versions"], [usd(V.reduce((t, v) => t + (v.volume24h || 0), 0)), "traded on chain, 24h"], [fmtN(issuers.length), "issuers compared"]],
       path: "",
+    };
+  },
+  async spreads(site){
+    const {stocks} = await currentBoard(site);
+    const sp = stocks.map(s => ({s, x: spreadOf(s)})).filter(r => r.x).sort((a, b) => b.x.spread - a.x.spread);
+    if (!sp.length) return null;
+    const w = sp[0], over = sp.filter(r => r.x.spread >= 0.01).length;
+    const med = sp.map(r => r.x.spread).sort((a, b) => a - b)[sp.length >> 1];
+    return {
+      eyebrow: "Spreads · Same stock, different price", big: (w.x.spread * 100).toFixed(2) + "%",
+      label: `between the cheapest and priciest ${w.s.ticker} token right now: ${w.x.lo.symbol} vs ${w.x.hi.symbol}`,
+      stats: [[fmtN(sp.length), "stocks on 2+ chains"], [(med * 100).toFixed(2) + "%", "typical spread"], [fmtN(over), "spreads over 1%"]],
+      path: "/spreads",
     };
   },
 };
