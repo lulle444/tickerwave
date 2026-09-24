@@ -1,0 +1,18 @@
+name: Probe xStocks API
+# Manual check of the xStocks API: response shape and timing. Run from the Actions tab when the xStocks data looks off.
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - run: |
+          for host in https://api.backed.fi/api/v2 https://api.xstocks.fi/api/v2; do
+            for page in 0 1 2; do
+              curl -sS --max-time 40 -o p.json -w "$host page $page: HTTP %{http_code} %{time_total}s %{size_download}B\n" "$host/public/assets?page=$page&pageSize=100" || true
+              jq -c '{keys: keys, page: .page, n: ((.nodes // .data // []) | length), first: ((.nodes // .data // [])[0] | if type == "object" then (keys) else . end), sym: [(.nodes // .data // [])[] | (.symbol // .node.symbol)] | .[0:5]}' p.json || head -c 300 p.json
+            done
+          done
+          curl -sS --max-time 20 -o m.json -w "multiplier: HTTP %{http_code} %{time_total}s\n" "https://api.backed.fi/api/v2/public/assets/TSLAx/multiplier?network=Solana"; cat m.json; echo
+          curl -sS --max-time 20 -o q.json -w "price: HTTP %{http_code} %{time_total}s\n" "https://api.backed.fi/api/v2/public/assets/TSLAx/price-data"; cat q.json; echo
+          curl -sS --max-time 20 -o d.json -w "dex solana: HTTP %{http_code} %{time_total}s\n" "https://api.dexscreener.com/tokens/v1/solana/XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB,Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh"; jq -c '[.[] | {chainId, dexId, base: .baseToken.symbol, priceUsd, liq: .liquidity.usd}]' d.json
