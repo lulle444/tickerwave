@@ -28,7 +28,7 @@ F = B["fonts"]
 css = [":root{"]
 for k, v in C.items():
     css.append(f"  --b-{k}:{v};")
-for k in ("accent", "accent2", "up", "down", "ink"):
+for k in ("accent", "accent2", "up", "down", "ink", "bg"):
     css.append(f"  --{k}-rgb:{rgb(C[k])};")
 for k, v in F.items():
     css.append(f'  --f-{k}:"{v}";')

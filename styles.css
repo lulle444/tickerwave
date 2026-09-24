@@ -33,7 +33,7 @@ section{scroll-margin-top:90px}
 .visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* ticker tape */
-.tape{position:relative;z-index:6;height:34px;overflow:hidden;border-bottom:1px solid var(--line);background:rgba(7,8,13,.86);
+.tape{position:relative;z-index:6;height:34px;overflow:hidden;border-bottom:1px solid var(--line);background:rgba(var(--bg-rgb),.86);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
 .tape-track{display:flex;width:max-content;animation:tape 120s linear infinite}
 .tape:hover .tape-track{animation-play-state:paused}
@@ -47,7 +47,7 @@ section{scroll-margin-top:90px}
 
 /* nav */
 .nav{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:16px;height:64px;margin:0 calc(50% - 50vw);padding:0 max(28px, calc(50vw - 592px));
-  background:rgba(7,8,13,.72);border-bottom:1px solid var(--line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+  background:rgba(var(--bg-rgb),.72);border-bottom:1px solid var(--line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
 .logo img{width:30px;height:30px;flex:none}
 .logo .word{font:700 17px/1 var(--display);letter-spacing:-.01em}
