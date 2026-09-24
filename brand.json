@@ -9,7 +9,7 @@
   "description": "Tokenized stocks on Robinhood Chain, Solana, Ethereum and more, compared side by side: price against the real share, market depth and volume, live.",
   "domain": "tickerwave.vercel.app",
   "x": "",
-  "telegram": "",
+  "telegram": "TickerwaveAlertsBot",
   "colors": {
     "bg": "#07080D",
     "bg2": "#0B0E16",

@@ -1,11 +1,15 @@
 // One-off after adding TELEGRAM_BOT_TOKEN: points the bot's webhook at this site and sets its command menu.
-// Harmless to call again; it only ever registers this site's own webhook.
+// Harmless to call again; it only ever registers this site's own webhook, and only for the bot named in brand.json,
+// so a token that belongs to another bot (e.g. a sister site's) can never have its webhook taken over.
 const B = require("../brand.json");
 const {tg, webhookSecret} = require("../lib/telegram");
 const {SITE} = require("../lib/alerts");
 
 module.exports = async function handler(req, res){
   try {
+    const me = await tg("getMe", {}), want = String(B.telegram || "").replace(/^@/, "");
+    if (!want || me.username.toLowerCase() !== want.toLowerCase())
+      return res.status(409).json({ok: false, error: `TELEGRAM_BOT_TOKEN belongs to @${me.username}, but brand.json names @${want || "(none)"}. Nothing was changed.`});
     await tg("setWebhook", {url: SITE + "/api/telegram", secret_token: webhookSecret(),
       allowed_updates: ["message", "callback_query"], drop_pending_updates: true});
     await tg("setMyCommands", {commands: [
@@ -16,7 +20,6 @@ module.exports = async function handler(req, res){
       {command: "start", description: `How ${B.name} alerts work`},
     ]});
     await tg("setMyDescription", {description: `Alerts for stock tokens on every chain: get a message when a token trades away from its share price, or when the same stock is priced differently across chains. From ${B.name}.`}).catch(() => {});
-    const me = await tg("getMe", {});
     res.status(200).json({ok: true, bot: "@" + me.username, webhook: SITE + "/api/telegram"});
   } catch (e) {
     res.status(500).json({ok: false, error: String(e.message || e)});
