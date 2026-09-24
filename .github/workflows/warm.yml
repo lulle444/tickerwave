@@ -1,6 +1,7 @@
 name: Warm board
 # Every 5 minutes: asks for the board so Vercel's CDN always holds a fresh copy and visitors never wait
-# for the upstream APIs, then runs the Telegram alert check. Prints how long each source took and any errors.
+# for the upstream APIs, then runs the alert check (which also saves the hourly peg history). Prints how long each
+# source took, any errors, and what the peg history holds.
 on:
   schedule:
     - cron: "*/5 * * * *"
@@ -18,3 +19,8 @@ jobs:
           test "${code%% *}" = 200
       - name: Check alerts
         run: curl -sS --max-time 120 https://usepegwatch.vercel.app/api/check-alerts; echo
+      - name: Peg history
+        # the t= parameter skips the CDN copy so this shows what is saved right now
+        run: |
+          curl -sS --max-time 60 "https://usepegwatch.vercel.app/api/history?p=issuers&t=$(date +%s)"; echo
+          curl -sS --max-time 60 "https://usepegwatch.vercel.app/api/history?v=NVDA_robinhood&t=$(date +%s)" | jq -c '{v, n: (.points | length), last: .points[-1]}' || true
