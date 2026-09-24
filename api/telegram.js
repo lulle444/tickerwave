@@ -46,7 +46,7 @@ async function spreadCard(chat, t){
 async function createGap(chat, q, thr){
   if (!(thr >= 0.1 && thr <= 50)) return send(chat, "Pick a level between 0.1% and 50%, like <code>/gap 1.5</code>.");
   const board = await currentBoard(A.SITE), hit = findVersion(board, q);
-  if (!hit) return send(chat, "That token isn’t available any more.");
+  if (!hit) return send(chat, `I couldn’t find that token. Pick one on ${A.SITE}`);
   const {s, v} = hit, where = chainName(board, v.chain);
   const r = await A.addAlert(chat, {kind: "gap", key: A.vidOf(v), label: `${v.symbol} on ${where}`, ticker: s.ticker, thr},
     v.gap != null && Math.abs(v.gap * 100) >= thr);
