@@ -16,6 +16,7 @@ jobs:
           echo "HTTP $code"
           jq -c '{timing, errors, stocks: (.stocks | length), chains: [.chains[].id], versions: ([.stocks[].versions[]] | group_by(.issuer + "@" + .chain) | map({(.[0].issuer + "@" + .[0].chain): length}) | add)}' out.json || head -c 600 out.json
           jq -c '.stocks[] | select(.ticker == "TSLA" or .ticker == "SPY" or .ticker == "NVDA") | {ticker, ref, v: [.versions[] | {symbol, chain, onchain, gap, liquidity, multiplier}]}' out.json || true
+          echo "Gaps over 5%:"; jq -c '[.stocks[] | . as $s | .versions[] | select(.gap != null and (.gap | fabs) > 0.05) | {t: $s.ticker, ref: $s.ref, symbol, chain, onchain, gap, liquidity, multiplier}]' out.json || true
           test "${code%% *}" = 200
       - name: Check alerts
         run: curl -sS --max-time 120 https://usepegwatch.vercel.app/api/check-alerts; echo
