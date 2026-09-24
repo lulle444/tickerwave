@@ -2,6 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://usepegwatch.vercel.app/</loc></url>
   <url><loc>https://usepegwatch.vercel.app/spreads</loc></url>
+  <url><loc>https://usepegwatch.vercel.app/weekend</loc></url>
   <url><loc>https://usepegwatch.vercel.app/chains</loc></url>
   <url><loc>https://usepegwatch.vercel.app/alerts</loc></url>
   <url><loc>https://usepegwatch.vercel.app/learn</loc></url>

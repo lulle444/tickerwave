@@ -80,7 +80,7 @@ HEAD = """<!doctype html>
 <div class="wrap">
 """
 
-NAV_ITEMS = [("/", "Stocks"), ("/spreads", "Spreads"), ("/chains", "Chains"), ("/alerts", "Alerts"), ("/learn", "Learn")]
+NAV_ITEMS = [("/", "Stocks"), ("/spreads", "Spreads"), ("/weekend", "Weekend"), ("/chains", "Chains"), ("/alerts", "Alerts"), ("/learn", "Learn")]
 
 
 def nav(path):
@@ -108,7 +108,7 @@ FOOT = """
         <a class="logo" href="/" aria-label="{{name}} home"><img src="/assets/logo-mark.svg" alt="" width="26" height="26"><span class="word">{{w1}}<b>{{w2}}</b></span></a>
         <p>{{tagline}} Independent, read-only and free. Live on-chain data, no paid placements.</p>""" + X_LINK + """
       </div>
-      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
+      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/weekend">Weekend signal</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
       <nav aria-label="Learn"><h4>Learn</h4><a href="/learn">Stock tokens explained</a><a href="/learn#checklist">Before you trade</a><a href="/#how">How we calculate</a></nav>
       <nav aria-label="Company"><h4>Company</h4><a href="/about">About</a><a href="/about#disclaimer">Disclaimer</a></nav>
     </div>
@@ -413,13 +413,71 @@ ALERTS_SOON = """
     </div>
   </section>
 """
+WEEKEND = pagehead("Weekend signal", "Where tokens say stocks <em>reopen.</em>",
+  "From Friday 8 pm to Sunday 8 pm New York time the stock market is shut, but stock tokens keep trading. Their price against Friday’s close is the market’s live guess at where each stock reopens.") + """
+  <section class="wkstatus panel" id="wkStatus" aria-live="polite">
+    <div><p class="eyebrow" id="wkMode">Weekend signal</p><h2 id="wkTitle">Loading…</h2><p id="wkText" class="muted"></p></div>
+    <div class="wkclock"><small id="wkClockLabel">&nbsp;</small><strong id="wkClock" class="num">–</strong><span id="wkClockAt">&nbsp;</span></div>
+  </section>
+
+  <section class="stats panel" aria-label="Key figures">
+    <div><small>S&amp;P 500 (SPY)</small><strong id="wIndex">–</strong><span id="wIndexSub">&nbsp;</span></div>
+    <div><small>Pointing up</small><strong id="wUp">–</strong><span id="wUpSub">&nbsp;</span></div>
+    <div><small>Pointing down</small><strong id="wDown">–</strong><span id="wDownSub">&nbsp;</span></div>
+    <div><small>Biggest move</small><strong id="wBig">–</strong><span id="wBigSub">&nbsp;</span></div>
+  </section>
+
+  <section class="tablepanel panel" aria-labelledby="wkH">
+    <div class="sectionhead">
+      <div><h2 id="wkH">Every stock, Friday’s close vs. its tokens</h2><p class="sub" id="wkSub">Counting token markets over $10k with a published share ratio, weighted by depth.</p></div>
+    </div>
+    <div class="controls">
+      <div class="chips" role="group" aria-label="Sort">
+        <button class="chip" data-wsort="abs" aria-pressed="true">Biggest moves</button>
+        <button class="chip" data-wsort="up" aria-pressed="false">Up</button>
+        <button class="chip" data-wsort="down" aria-pressed="false">Down</button>
+        <button class="chip" data-wsort="depth" aria-pressed="false">Deepest</button>
+      </div>
+      <span class="grow"></span>
+      <input type="search" id="q" placeholder="Search ticker or company" aria-label="Search ticker or company">
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead id="wkHead"></thead>
+        <tbody id="wkRows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="more"><span id="count"></span><button class="btn ghost small" id="showMore" hidden>Show more</button></div>
+  </section>
+
+  <section class="block" id="wkPastBox" hidden aria-labelledby="wkPastH">
+    <div class="sectionhead"><div><p class="eyebrow">Track record</p><h2 id="wkPastH">How past weekends turned out</h2><p class="sub">Direction counts as right when the tokens moved at least 0.25% and the stock opened Monday on the same side of Friday’s close.</p></div></div>
+    <div class="tablebox panel"><table><thead><tr><th>Weekend</th><th class="r">Stocks</th><th class="r">Direction right</th><th class="r">Typical miss</th></tr></thead><tbody id="wkPast"></tbody></table></div>
+  </section>
+
+  <div class="twocol block-sm">
+    <div class="panel note-card">
+      <p class="eyebrow">How it works</p>
+      <h3>A price that keeps moving while the market sleeps</h3>
+      <p>Stock tokens trade around the clock on Robinhood Chain, Solana and Ethereum. Over the weekend the share price stays at Friday’s 8 pm close, so every move in a token is traders pricing in news before the market opens again. We blend each stock’s deep token markets, weighted by how much money sits in them, and save the reading every hour.</p>
+      <p>When trading restarts on Sunday at 8 pm New York time, and again after Monday’s opening bell, we record where each stock actually opened, so you can see how good the call was.</p>
+    </div>
+    <div class="panel note-card">
+      <p class="eyebrow">Read this first</p>
+      <h3>A signal, not a forecast</h3>
+      <p>Weekend token markets are thinner than the stock market, and a few large trades can move them. Treat the numbers as a read on sentiment. Not financial advice.</p>
+    </div>
+  </div>
+"""
+
 ALERTS = pagehead("Alerts", "Hear it <em>first.</em>",
   "Get a Telegram message the moment a stock token trades away from its share price, or when the same stock is priced differently across chains.") + (ALERTS_ON if BOT else ALERTS_SOON)
 
-OG = {"/": "/api/og?p=home", "/spreads": "/api/og?p=spreads"}
+OG = {"/": "/api/og?p=home", "/spreads": "/api/og?p=spreads", "/weekend": "/api/og?p=weekend"}
 PAGES = [
   ("index.html", "/", "{{name}} · Stock tokens on every chain", "{desc}", "", HOME, "board.js"),
   ("spreads.html", "/spreads", "Spreads · {{name}}", "The same stock, priced differently across chains: the cheapest and priciest token of every stock, live.", "", SPREADS, "board.js"),
+  ("weekend.html", "/weekend", "Weekend signal · {{name}}", "The stock market closes for the weekend, stock tokens don’t. See where tokens say every stock reopens on Monday, live from Friday night.", "", WEEKEND, "board.js"),
   ("chains.html", "/chains", "Chains · {{name}}", "Robinhood Chain, Solana, Ethereum and BNB Chain compared: stock tokens, volume and how closely they track the share.", "", CHAINSPAGE, "board.js"),
   ("alerts.html", "/alerts", "Alerts · {{name}}", "Free Telegram alerts when a stock token trades away from its share price or chains disagree.", "", ALERTS, "board.js"),
   ("learn.html", "/learn", "Learn · {{name}}", "Stock tokens explained: share ratios, price gaps, chains and five checks before you trade.", "", LEARN, "board.js"),

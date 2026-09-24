@@ -8,6 +8,7 @@ const {redis, pipeline} = require("../lib/store");
 const {currentBoard, spreadOf, marketOpen, THIN} = require("../lib/board");
 const A = require("../lib/alerts");
 const H = require("../lib/history");
+const W = require("../lib/weekend");
 
 const REARM = 0.5;
 
@@ -15,19 +16,26 @@ module.exports = async function handler(req, res){
   // Until the database is connected there is nothing to save or check; say so without failing.
   if (!(process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL))
     return res.status(200).json({skipped: "database not connected yet"});
-  if (!marketOpen()) return res.status(200).json({skipped: "US market closed, share prices frozen"});
   try {
+    // Weekend: share prices are frozen, so no alerts; save the hourly weekend signal instead.
+    if (!marketOpen()){
+      if (await redis("EXISTS", W.K.hour(Math.floor(Date.now() / 3.6e6)))) return res.status(200).json({skipped: "US market closed, weekend signal saved this hour"});
+      const saved = await W.snapshot(await currentBoard(A.SITE));
+      return res.status(200).json({skipped: "US market closed, share prices frozen", weekendSignal: saved});
+    }
     if (!(await redis("SET", A.K.lock, String(Date.now()), "NX", "EX", 240)))
       return res.status(200).json({skipped: "ran recently"});
     const due = !(await redis("EXISTS", H.K.hour(H.hourNow())));
+    const settleDue = W.settleDue();
     const raw = process.env.TELEGRAM_BOT_TOKEN ? await redis("HGETALL", A.K.alerts) || [] : [];
     const all = [];
     for (let i = 1; i < raw.length; i += 2) all.push(JSON.parse(raw[i]));
-    if (!all.length && !due) return res.status(200).json({alerts: 0});
+    if (!all.length && !due && !settleDue) return res.status(200).json({alerts: 0});
 
     const board = await currentBoard(A.SITE);
     const saved = due ? await H.record(board).catch(e => { console.error("peg history:", e); return -1; }) : 0;
-    if (!all.length) return res.status(200).json({alerts: 0, saved});
+    const settled = settleDue ? await W.settle(board).catch(e => { console.error("weekend settle:", e); return null; }) : null;
+    if (!all.length) return res.status(200).json({alerts: 0, saved, settled});
     const chainName = id => (board.chains.find(c => c.id === id) || {}).name || id;
     const byTicker = new Map(board.stocks.map(s => [s.ticker, s]));
     const writes = [], sends = [];
@@ -64,7 +72,7 @@ module.exports = async function handler(req, res){
     const results = await Promise.allSettled(sends.map(([c, t]) => send(c, t)));
     const failed = results.filter(r => r.status === "rejected");
     failed.forEach(r => console.error("send failed:", r.reason && r.reason.message));
-    res.status(200).json({alerts: all.length, saved, fired: sends.length, sent: sends.length - failed.length, failed: failed.length});
+    res.status(200).json({alerts: all.length, saved, settled, fired: sends.length, sent: sends.length - failed.length, failed: failed.length});
   } catch (e) {
     console.error("check-alerts:", e);
     res.status(500).json({error: String(e.message || e)});

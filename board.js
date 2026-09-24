@@ -320,6 +320,105 @@ function renderSpreads(){
   set("count", `${list.length} stocks`);
 }
 
+/* ---------- weekend signal ---------- */
+const wk = {view: null, sort: "abs", limit: PAGE, at: 0};
+const MAX_MOVE = 0.25;
+// Depth-weighted move implied by a stock's deep token markets (known share ratio only), as on the server.
+function impliedOf(s){
+  const vs = s.versions.filter(v => v.gap != null && !v.halted && !v.ratioUnknown && v.liquidity >= THIN && Math.abs(v.gap) < MAX_MOVE);
+  if (!vs.length) return null;
+  const w = vs.reduce((t, v) => t + v.liquidity, 0);
+  return {k: s.ticker, n: s.name, lg: s.logo, c: s.ref, i: vs.reduce((t, v) => t + v.gap * v.liquidity, 0) / w, d: w, v: vs.length};
+}
+// Minutes until a New York wall-clock moment (day 0 = Sunday, minute of day), and that moment in the viewer's time.
+function untilNY(targetDay, targetMin){
+  const now = new Date(), et = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+  const cur = et.getDay() * 1440 + et.getHours() * 60 + et.getMinutes();
+  let diff = targetDay * 1440 + targetMin - cur;
+  if (diff <= 0) diff += 7 * 1440;
+  const at = new Date(now.getTime() + diff * 60000);
+  return {diff, at};
+}
+const fmtLeft = m => m >= 1440 ? `${Math.floor(m / 1440)}d ${Math.floor(m % 1440 / 60)}h` : `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`;
+const fmtWhen = d => d.toLocaleString(undefined, {weekday: "short", hour: "2-digit", minute: "2-digit"});
+const fmtWeek = w => new Date(w + "T12:00:00Z").toLocaleDateString("en-US", {month: "short", day: "numeric"});
+function loadWeekend(){
+  fetch("/api/history?p=weekend").then(r => r.json()).then(j => { wk.view = j; renderWeekend(); }).catch(() => { wk.view = {}; renderWeekend(); });
+}
+function renderWeekend(){
+  if (!state.stocks.length && !wk.view) return;
+  const live = marketSession().key === "closed";
+  const last = wk.view && wk.view.latest && wk.view.latest.snap ? wk.view.latest : null;
+  let rows = [], res = null, mode;
+  if (live){
+    mode = "live";
+    rows = state.stocks.filter(s => s.stale).map(impliedOf).filter(Boolean);
+    if (!rows.length && last) rows = last.snap.stocks;   // board not frozen yet: fall back to the last saved reading
+  } else if (last){
+    mode = "result"; rows = last.snap.stocks; res = last.res || {};
+  } else mode = "waiting";
+
+  // status panel and clock
+  const reopen = untilNY(0, 1200), close = untilNY(5, 1200);
+  if (mode === "live"){
+    set("wkMode", "● Live now");
+    set("wkTitle", "The market is closed. Tokens are still trading.");
+    set("wkText", "Each number below is how far a stock’s tokens trade from Friday’s close right now. Updated every couple of minutes.");
+    set("wkClockLabel", "Trading restarts in"); set("wkClock", fmtLeft(reopen.diff)); set("wkClockAt", fmtWhen(reopen.at) + " your time");
+  } else {
+    set("wkMode", mode === "result" ? `Weekend of ${fmtWeek(last.week)}` : "Weekend signal");
+    set("wkTitle", mode === "result" ? "How the weekend call turned out" : "The first signal starts this Friday night.");
+    set("wkText", mode === "result"
+      ? (res.open ? "Tokens’ last weekend reading next to where each stock opened on Monday." : res.reopen ? "Tokens’ last weekend reading next to where trading restarted Sunday night. Monday’s open is added after the bell." : "Tokens’ last weekend reading. Where each stock actually opened is added once trading restarts.")
+      : "When the US market closes on Friday at 8 pm New York time, this page starts showing where stock tokens say every stock will reopen.");
+    set("wkClockLabel", "Next signal starts in"); set("wkClock", fmtLeft(close.diff)); set("wkClockAt", fmtWhen(close.at) + " your time");
+  }
+  $("wkStatus").className = "wkstatus panel " + mode;
+
+  // key figures
+  const spy = rows.find(r => r.k === "SPY");
+  set("wIndex", spy ? fmtGap(spy.i) : "–");
+  set("wIndexSub", spy ? (mode === "live" ? "Where SPY tokens trade vs. Friday" : "SPY tokens’ last weekend reading") : "No deep SPY token market");
+  const up = rows.filter(r => r.i >= 0.0025), down = rows.filter(r => r.i <= -0.0025);
+  set("wUp", rows.length ? up.length : "–"); set("wUpSub", rows.length ? "at least +0.25%" : " ");
+  set("wDown", rows.length ? down.length : "–"); set("wDownSub", rows.length ? "at least −0.25%" : " ");
+  const big = rows.slice().sort((a, b) => Math.abs(b.i) - Math.abs(a.i))[0];
+  set("wBig", big ? fmtGap(big.i) : "–"); set("wBigSub", big ? `${big.k} · ${big.n}` : " ");
+
+  // table
+  const out = res && (res.open || res.reopen);
+  const outLabel = res && res.open ? "Monday open" : "Sunday reopen";
+  // the move comes right after the stock so it stays in view on narrow screens
+  $("wkHead").innerHTML = `<tr><th>Stock</th><th class="r">Tokens say</th>${out ? `<th class="r">${outLabel}</th><th class="r">Call</th>` : ""}<th class="r">Friday close</th><th class="r">Tokens imply</th>${out ? "" : `<th class="r hm">Token depth</th><th class="r hm">Markets</th>`}</tr>`;
+  const q = state.q.trim().toLowerCase();
+  const sorters = {abs: (a, b) => Math.abs(b.i) - Math.abs(a.i), up: (a, b) => b.i - a.i, down: (a, b) => a.i - b.i, depth: (a, b) => b.d - a.d};
+  const list = rows.filter(r => !q || r.k.toLowerCase().includes(q) || (r.n || "").toLowerCase().includes(q)).sort(sorters[wk.sort]);
+  const shown = list.slice(0, wk.limit);
+  const pill = g => `<span class="gap ${g >= 0.0025 ? "wup" : g <= -0.0025 ? "wdown" : "fair"}"><span class="num">${fmtGap(g)}</span></span>`;
+  const call = (r, a) => a == null ? '<span class="muted">–</span>' : Math.abs(r.i) < 0.0025 ? '<span class="muted">flat</span>' : Math.sign(a) === Math.sign(r.i) ? '<span class="callok">✓ right way</span>' : '<span class="callno">✗ wrong way</span>';
+  $("wkRows").innerHTML = mode === "waiting" ? `<tr><td colspan="6" class="empty">Nothing yet: the table fills in when the market closes on Friday at 8 pm New York time (${esc(fmtWhen(close.at))} your time).</td></tr>`
+    : shown.length ? shown.map(r => { const a = out ? out.m[r.k] : null; return `<tr>
+      <td><a class="ticker plain" href="/?s=${encodeURIComponent(r.k)}">${r.lg ? `<img src="${esc(r.lg)}" alt="" width="30" height="30" loading="lazy" onerror="this.remove()">` : ""}<span class="proto"><b class="asset">${esc(r.k)}</b><span>${esc(r.n)}</span></span></a></td>
+      <td class="r">${pill(r.i)}</td>
+      ${out ? `<td class="r">${a == null ? '<span class="muted">–</span>' : pill(a)}</td><td class="r">${call(r, a)}</td>` : ""}
+      <td class="r num">${fmtPrice(r.c)}</td>
+      <td class="r num">${fmtPrice(r.c * (1 + r.i))}</td>
+      ${out ? "" : `<td class="r num hm">${fmtUsd(r.d)}</td><td class="r num hm">${r.v}</td>`}
+    </tr>`; }).join("") : `<tr><td colspan="6" class="empty">${rows.length ? "No stocks match." : "No stock has a deep enough token market right now."}</td></tr>`;
+  set("count", rows.length ? `Showing ${shown.length} of ${list.length} stocks` : "");
+  $("showMore").hidden = list.length <= wk.limit;
+  if (out){
+    const called = rows.filter(r => Math.abs(r.i) >= 0.0025 && out.m[r.k] != null);
+    const right = called.filter(r => Math.sign(r.i) === Math.sign(out.m[r.k])).length;
+    if (called.length) set("wkText", `${$("wkText").textContent} Tokens called the direction right for ${right} of ${called.length} stocks that moved at least 0.25%.`);
+  }
+
+  // track record
+  const past = (wk.view && wk.view.past) || [];
+  $("wkPastBox").hidden = !past.length;
+  $("wkPast").innerHTML = past.map(p => `<tr><td>${esc(fmtWeek(p.week))}</td><td class="r num">${p.stocks}</td><td class="r num">${p.called ? `${p.right} of ${p.called} (${Math.round(p.right / p.called * 100)}%)` : "–"}</td><td class="r num">${p.typicalMiss == null ? "–" : "±" + (p.typicalMiss * 100).toFixed(2) + "%"}</td></tr>`).join("");
+}
+
 /* ---------- chains page ---------- */
 function renderChains(){
   const V = state.stocks.flatMap(s => s.versions.map(v => ({...v, ticker: s.ticker, stale: s.stale})));
@@ -354,6 +453,7 @@ function render(){
   if ($("issuers")) renderIssuers();
   if ($("spreadRows")) renderSpreads();
   if ($("chainGrid")) renderChains();
+  if ($("wkRows")) renderWeekend();
   if (!$("rows")) return;
   if (state.deep){   // /?s=TSLA (links from alerts and other pages) opens that stock, whatever the filters
     const i = filtered().sort((a, b) => (b.volume24h ?? -1) - (a.volume24h ?? -1)).findIndex(r => r.ticker === state.deep);
@@ -394,6 +494,20 @@ if ($("rows")){
   $("q").addEventListener("input", e => { state.q = e.target.value; state.limit = PAGE; renderTable(); });
 }
 
+if ($("wkRows")){
+  loadWeekend();
+  setInterval(() => { if (!document.hidden) loadWeekend(); }, 300000);
+  setInterval(() => { if (!document.hidden) renderWeekend(); }, 60000);   // keep the clock ticking
+  $("q").addEventListener("input", e => { state.q = e.target.value; wk.limit = PAGE; renderWeekend(); });
+  $("showMore").addEventListener("click", () => { wk.limit += PAGE; renderWeekend(); });
+  document.addEventListener("click", e => {
+    const b = e.target.closest(".chip[data-wsort]");
+    if (!b) return;
+    wk.sort = b.dataset.wsort; wk.limit = PAGE;
+    document.querySelectorAll(".chip[data-wsort]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    renderWeekend();
+  });
+}
 if ($("spreadRows")){
   $("q").addEventListener("input", e => { state.q = e.target.value; renderSpreads(); });
   $("minDepth").addEventListener("change", renderSpreads);

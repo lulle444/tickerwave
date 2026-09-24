@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weekend signal · Pegwatch</title>
+<meta name="description" content="The stock market closes for the weekend, stock tokens don’t. See where tokens say every stock reopens on Monday, live from Friday night.">
+<link rel="canonical" href="https://usepegwatch.vercel.app/weekend">
+<link rel="icon" type="image/svg+xml" href="/assets/logo-mark.svg">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:title" content="Weekend signal · Pegwatch">
+<meta property="og:description" content="The stock market closes for the weekend, stock tokens don’t. See where tokens say every stock reopens on Monday, live from Friday night.">
+<meta property="og:url" content="https://usepegwatch.vercel.app/weekend">
+<meta property="og:image" content="https://usepegwatch.vercel.app/api/og?p=weekend">
+<meta name="twitter:image" content="https://usepegwatch.vercel.app/api/og?p=weekend">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#07080D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/brand.css">
+</head>
+<body data-bot="usePegwatchBot">
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="tape" id="tape" aria-label="Live stock-token prices"><div class="tape-track" id="tapeTrack"></div></div>
+<div class="wrap">
+  <nav class="nav" aria-label="Main">
+    <a class="logo" href="/" aria-label="Pegwatch home"><img src="/assets/logo-mark.svg" alt="" width="36" height="36"><span class="word">PEG<b>WATCH</b></span></a>
+    <div class="navlinks">
+      <a href="/">Stocks</a>
+      <a href="/spreads">Spreads</a>
+      <a href="/weekend" aria-current="page">Weekend</a>
+      <a href="/chains">Chains</a>
+      <a href="/alerts">Alerts</a>
+      <a href="/learn">Learn</a>
+    </div>
+    <div class="source" id="source"><span class="dot" id="dot"></span><span id="sourceText">Loading data…</span></div>
+  </nav>
+  <div class="mobilenav" aria-label="Sections">
+    <a href="/">Stocks</a>
+    <a href="/spreads">Spreads</a>
+    <a href="/weekend" aria-current="page">Weekend</a>
+    <a href="/chains">Chains</a>
+    <a href="/alerts">Alerts</a>
+    <a href="/learn">Learn</a>
+  </div>
+
+  <header class="pagehead">
+    <div>
+      <p class="eyebrow">Weekend signal</p>
+      <h1>Where tokens say stocks <em>reopen.</em></h1>
+      <p class="lede">From Friday 8 pm to Sunday 8 pm New York time the stock market is shut, but stock tokens keep trading. Their price against Friday’s close is the market’s live guess at where each stock reopens.</p>
+    </div>
+  </header>
+
+  <section class="wkstatus panel" id="wkStatus" aria-live="polite">
+    <div><p class="eyebrow" id="wkMode">Weekend signal</p><h2 id="wkTitle">Loading…</h2><p id="wkText" class="muted"></p></div>
+    <div class="wkclock"><small id="wkClockLabel">&nbsp;</small><strong id="wkClock" class="num">–</strong><span id="wkClockAt">&nbsp;</span></div>
+  </section>
+
+  <section class="stats panel" aria-label="Key figures">
+    <div><small>S&amp;P 500 (SPY)</small><strong id="wIndex">–</strong><span id="wIndexSub">&nbsp;</span></div>
+    <div><small>Pointing up</small><strong id="wUp">–</strong><span id="wUpSub">&nbsp;</span></div>
+    <div><small>Pointing down</small><strong id="wDown">–</strong><span id="wDownSub">&nbsp;</span></div>
+    <div><small>Biggest move</small><strong id="wBig">–</strong><span id="wBigSub">&nbsp;</span></div>
+  </section>
+
+  <section class="tablepanel panel" aria-labelledby="wkH">
+    <div class="sectionhead">
+      <div><h2 id="wkH">Every stock, Friday’s close vs. its tokens</h2><p class="sub" id="wkSub">Counting token markets over $10k with a published share ratio, weighted by depth.</p></div>
+    </div>
+    <div class="controls">
+      <div class="chips" role="group" aria-label="Sort">
+        <button class="chip" data-wsort="abs" aria-pressed="true">Biggest moves</button>
+        <button class="chip" data-wsort="up" aria-pressed="false">Up</button>
+        <button class="chip" data-wsort="down" aria-pressed="false">Down</button>
+        <button class="chip" data-wsort="depth" aria-pressed="false">Deepest</button>
+      </div>
+      <span class="grow"></span>
+      <input type="search" id="q" placeholder="Search ticker or company" aria-label="Search ticker or company">
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead id="wkHead"></thead>
+        <tbody id="wkRows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="more"><span id="count"></span><button class="btn ghost small" id="showMore" hidden>Show more</button></div>
+  </section>
+
+  <section class="block" id="wkPastBox" hidden aria-labelledby="wkPastH">
+    <div class="sectionhead"><div><p class="eyebrow">Track record</p><h2 id="wkPastH">How past weekends turned out</h2><p class="sub">Direction counts as right when the tokens moved at least 0.25% and the stock opened Monday on the same side of Friday’s close.</p></div></div>
+    <div class="tablebox panel"><table><thead><tr><th>Weekend</th><th class="r">Stocks</th><th class="r">Direction right</th><th class="r">Typical miss</th></tr></thead><tbody id="wkPast"></tbody></table></div>
+  </section>
+
+  <div class="twocol block-sm">
+    <div class="panel note-card">
+      <p class="eyebrow">How it works</p>
+      <h3>A price that keeps moving while the market sleeps</h3>
+      <p>Stock tokens trade around the clock on Robinhood Chain, Solana and Ethereum. Over the weekend the share price stays at Friday’s 8 pm close, so every move in a token is traders pricing in news before the market opens again. We blend each stock’s deep token markets, weighted by how much money sits in them, and save the reading every hour.</p>
+      <p>When trading restarts on Sunday at 8 pm New York time, and again after Monday’s opening bell, we record where each stock actually opened, so you can see how good the call was.</p>
+    </div>
+    <div class="panel note-card">
+      <p class="eyebrow">Read this first</p>
+      <h3>A signal, not a forecast</h3>
+      <p>Weekend token markets are thinner than the stock market, and a few large trades can move them. Treat the numbers as a read on sentiment. Not financial advice.</p>
+    </div>
+  </div>
+
+  <footer class="sitefoot">
+    <div class="footgrid">
+      <div class="footbrand">
+        <a class="logo" href="/" aria-label="Pegwatch home"><img src="/assets/logo-mark.svg" alt="" width="26" height="26"><span class="word">PEG<b>WATCH</b></span></a>
+        <p>Every stock token, held to its share price. Independent, read-only and free. Live on-chain data, no paid placements.</p>
+      </div>
+      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/weekend">Weekend signal</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
+      <nav aria-label="Learn"><h4>Learn</h4><a href="/learn">Stock tokens explained</a><a href="/learn#checklist">Before you trade</a><a href="/#how">How we calculate</a></nav>
+      <nav aria-label="Company"><h4>Company</h4><a href="/about">About</a><a href="/about#disclaimer">Disclaimer</a></nav>
+    </div>
+    <div class="footbase">
+      <span>© 2026 Pegwatch. Not financial advice. Stock tokens are not the shares themselves.</span>
+      <span id="updated"></span>
+    </div>
+  </footer>
+</div>
+<script src="/board.js"></script>
+<script src="/backdrop.js"></script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

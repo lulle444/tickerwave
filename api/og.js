@@ -1,7 +1,8 @@
 // Share-preview image (1200×630 PNG) with today's numbers: /api/og?p=home.
 // Pages point their og:image here; X and others fetch it when a link is shared. Name, colors and logo come from brand.json.
 const B = require("../brand.json");
-const {currentBoard, spreadOf} = require("../lib/board");
+const {currentBoard, spreadOf, marketOpen} = require("../lib/board");
+const W = require("../lib/weekend");
 const fs = require("fs"), path = require("path");
 
 let logo;
@@ -18,6 +19,7 @@ const usd = v => {
   return s + "$" + a.toFixed(0);
 };
 const fmtN = n => n.toLocaleString("en-US");
+const sgn = g => (g > 0 ? "+" : g < 0 ? "−" : "") + Math.abs(g * 100).toFixed(2) + "%";
 
 // tiny element builder for @vercel/og (it takes React-shaped objects)
 const h = (style, ...children) => ({type: "div", props: {style: {display: "flex", ...style}, children: children.flat().filter(c => c != null && c !== false)}});
@@ -66,6 +68,33 @@ const CARDS = {
       path: "/spreads",
     };
   },
+  async weekend(site){
+    const path = "/weekend";
+    if (!marketOpen()){
+      // live: where tokens trade against Friday's frozen close right now
+      const {stocks} = await currentBoard(site), t = Date.now();
+      const rows = stocks.filter(s => s.ref != null && s.refAt && t - Date.parse(s.refAt) > 3.6e6).map(s => ({s, x: W.implied(s)})).filter(r => r.x);
+      if (rows.length){
+        const lead = rows.find(r => r.s.ticker === "SPY") || rows.slice().sort((a, b) => b.x.depth - a.x.depth)[0];
+        const big = rows.slice().sort((a, b) => Math.abs(b.x.move) - Math.abs(a.x.move))[0];
+        return {eyebrow: "Weekend signal · Live", big: sgn(lead.x.move),
+          label: `where ${lead.s.ticker} tokens trade vs. Friday’s close, while the stock market is shut`,
+          stats: [[fmtN(rows.filter(r => r.x.move >= 0.0025).length), "stocks pointing up"], [fmtN(rows.filter(r => r.x.move <= -0.0025).length), "pointing down"], [sgn(big.x.move), `biggest: ${big.s.ticker}`]], path};
+      }
+    }
+    try {
+      const v = await W.view(), l = v.latest, out = l && l.res && (l.res.open || l.res.reopen);
+      if (out){
+        const sc = W.score(l.snap, out);
+        if (sc && sc.called) return {eyebrow: "Weekend signal · Last weekend", big: `${sc.right}/${sc.called}`,
+          label: `stocks where weekend token trading called the direction of ${l.res.open ? "Monday’s open" : "the Sunday reopen"}`,
+          stats: [[fmtN(sc.stocks), "stocks tracked"], [Math.round(sc.right / sc.called * 100) + "%", "direction right"], [sc.typicalMiss == null ? "–" : "±" + (sc.typicalMiss * 100).toFixed(2) + "%", "typical miss"]], path};
+      }
+    } catch (e) {}
+    return {eyebrow: "Weekend signal", big: "Fri–Sun",
+      label: "The stock market closes for the weekend. Stock tokens don’t. See where they say every stock reopens on Monday.",
+      stats: [["24/7", "tokens keep trading"], ["Hourly", "readings all weekend"], ["Monday", "checked against the open"]], path};
+  },
 };
 
 function card(c, logo){
@@ -99,7 +128,7 @@ module.exports = async function handler(req, res){
     const img = new ImageResponse(card(c, logoUri()), {width: 1200, height: 630, fonts: f.length ? f : undefined});
     const buf = Buffer.from(await img.arrayBuffer());
     res.setHeader("Content-Type", "image/png");
-    res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
+    res.setHeader("Cache-Control", `public, s-maxage=${p === "weekend" ? 900 : 3600}, stale-while-revalidate=86400`);
     res.status(200).end(buf);
   } catch (e) {
     console.error("og", p, e);
