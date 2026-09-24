@@ -476,6 +476,57 @@ function renderStock(){
   if ($("stCtas")) $("stCtas").innerHTML = ctas.join("") || '<a href="/alerts">How alerts work →</a>';
 }
 
+/* ---------- peg ranking: every deep market scored on its hourly readings (from /api/history?p=ranking) ---------- */
+const rk = {data: null, sort: "best", chain: "all", limit: PAGE};
+function loadRanking(){
+  fetch("/api/history?p=ranking&days=7").then(r => r.json()).then(j => { rk.data = j; renderRanking(); })
+    .catch(() => { rk.data = {tokens: [], error: true}; renderRanking(); });
+}
+const pctTxt = g => "±" + (g * 100).toFixed(2) + "%";
+function renderRanking(){
+  const d = rk.data;
+  if (!d) return;
+  const all = d.tokens || [];
+  const box = $("rkChains");
+  if (box && !box.dataset.ready && all.length && state.chains.length){
+    box.dataset.ready = "1";
+    const ids = [...new Set(all.map(t => t.chain))];
+    box.innerHTML = `<button class="chip" data-rchain="all" aria-pressed="true">All chains</button>` + ids.map(id => `<button class="chip" data-rchain="${esc(id)}" aria-pressed="false">${esc(chainName(id))}</button>`).join("");
+  }
+  if (!all.length){
+    set("rkSub", d.error ? "The ranking couldn’t be loaded right now." : "The first hourly readings are still coming in. Check back once the US market has traded for a few hours.");
+    $("rkRows").innerHTML = `<tr><td colspan="7" class="empty">${d.error ? "Please try again in a minute." : "No market has enough readings to rank yet."}</td></tr>`;
+    return;
+  }
+  const since = d.since ? new Date(d.since).toLocaleDateString("en-US", {month: "short", day: "numeric"}) : "";
+  set("rkSub", d.hours < 24 ? `Early ranking: ${d.hours} hourly reading${d.hours === 1 ? "" : "s"} since ${since}. It firms up over the week.` : `Past ${d.days} days, up to ${d.hours} hourly readings per market, weekends left out.`);
+  set("rkCount", all.length);
+  set("rkCountSub", `on ${new Set(all.map(t => t.chain)).size} chains, over $10k deep`);
+  const good = all.filter(t => t.within >= 0.9).length;
+  set("rkFair", Math.round(good / all.length * 100) + "%");
+  set("rkFairSub", `${good} markets within ±0.5% for 90%+ of hours`);
+  const b = all[0], w = all[all.length - 1];
+  set("rkBest", b.symbol); set("rkBestSub", `${chainName(b.chain)} · typically ${pctTxt(b.typical)}`);
+  set("rkWorst", w.symbol); set("rkWorstSub", `${chainName(w.chain)} · typically ${pctTxt(w.typical)}`);
+  const q = state.q.trim().toLowerCase();
+  let list = all.map((t, i) => ({...t, rank: i + 1}))
+    .filter(t => (rk.chain === "all" || t.chain === rk.chain) && (!q || t.ticker.toLowerCase().includes(q) || t.symbol.toLowerCase().includes(q) || (t.name || "").toLowerCase().includes(q)));
+  if (rk.sort === "worst") list = list.reverse();
+  const shown = list.slice(0, rk.limit);
+  const band = t => t.typical > FAIR ? "premium" : t.typical > FAIR / 2 ? "warn" : "fair";
+  $("rkRows").innerHTML = shown.length ? shown.map(t => `<tr>
+      <td class="r num muted">${t.rank}</td>
+      <td><a class="ticker plain" href="${stockUrl(t.ticker)}">${t.logo ? `<img src="${esc(t.logo)}" alt="" width="28" height="28" loading="lazy" onerror="this.remove()">` : ""}<span class="proto"><b class="asset">${esc(t.symbol)}</b><span>${esc(chainName(t.chain))}${t.issuer === "robinhood" ? "" : " · " + esc(issuerOf(t.issuer).short || issuerOf(t.issuer).name)}</span></span></a></td>
+      <td class="r"><span class="gap ${band(t)}"><span class="num">${pctTxt(t.typical)}</span></span></td>
+      <td><div class="rkbar" role="img" aria-label="Within ±0.5% for ${Math.round(t.within * 100)}% of ${t.n} hourly readings"><i style="width:${(t.within * 100).toFixed(1)}%"></i></div><small class="sub2 num">${Math.round(t.within * 100)}% of ${t.n} hours</small></td>
+      <td class="r num hm">${pctTxt(t.worst)}</td>
+      <td class="hm">${t.spark && t.spark.length >= 3 ? sparkline(t.spark) : '<small class="muted">–</small>'}</td>
+      <td class="r num hm">${fmtUsd(t.depth)}</td>
+    </tr>`).join("") : `<tr><td colspan="7" class="empty">No market matches these filters.</td></tr>`;
+  set("count", `Showing ${shown.length} of ${list.length} markets`);
+  $("showMore").hidden = list.length <= rk.limit;
+}
+
 function render(){
   renderTape();
   if ($("mkt")) renderMarket();
@@ -484,6 +535,7 @@ function render(){
   if ($("chainGrid")) renderChains();
   if ($("wkRows")) renderWeekend();
   if ($("stRows")) renderStock();
+  if ($("rkRows")) renderRanking();
   if (!$("rows")) return;
   if (state.deep){   // /?s=TSLA (links from alerts and other pages) opens that stock, whatever the filters
     const i = filtered().sort((a, b) => (b.volume24h ?? -1) - (a.volume24h ?? -1)).findIndex(r => r.ticker === state.deep);
@@ -536,6 +588,20 @@ if ($("wkRows")){
     wk.sort = b.dataset.wsort; wk.limit = PAGE;
     document.querySelectorAll(".chip[data-wsort]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
     renderWeekend();
+  });
+}
+if ($("rkRows")){
+  loadRanking();
+  $("q").addEventListener("input", e => { state.q = e.target.value; rk.limit = PAGE; renderRanking(); });
+  $("showMore").addEventListener("click", () => { rk.limit += PAGE; renderRanking(); });
+  document.addEventListener("click", e => {
+    const so = e.target.closest(".chip[data-rsort]"), ch = e.target.closest(".chip[data-rchain]");
+    if (!so && !ch) return;
+    if (so) rk.sort = so.dataset.rsort; else rk.chain = ch.dataset.rchain;
+    rk.limit = PAGE;
+    const attr = so ? "data-rsort" : "data-rchain", b = so || ch;
+    document.querySelectorAll(`.chip[${attr}]`).forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    renderRanking();
   });
 }
 if ($("spreadRows")){

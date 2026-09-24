@@ -345,3 +345,10 @@ table.matrix tbody th{font:600 14px var(--display);letter-spacing:0;text-transfo
 @media (max-width:600px){.sttable .hm,.sttable .hc{display:none}}
 .sttable .mchain{display:none;color:var(--accent)}
 @media (max-width:600px){.sttable .mchain{display:block}.sttable .trade{font-size:0}.sttable .trade::after{content:"↗";font-size:14px}}
+
+/* ---------- peg ranking ---------- */
+.rkbar{position:relative;height:6px;width:120px;border-radius:3px;background:var(--line);overflow:hidden;margin:2px 0 6px}
+.rkbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--accent)}
+.rktable td{vertical-align:middle}
+.rktable .ticker img{border-radius:50%}
+@media (max-width:600px){table.rktable{min-width:0}.rktable .hm{display:none}.rktable th,.rktable td{padding-left:8px;padding-right:8px}.rkbar{width:72px}}

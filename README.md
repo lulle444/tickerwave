@@ -17,7 +17,7 @@ Server code reads `brand.json` directly, so the share-preview image and the API'
 - `lib/board.js` holds one plug-in per issuer. Each lists its tokens (chain, address, share ratio); DexScreener supplies price, depth and volume for all of them. Share prices come from live quotes for the underlying stock.
 - `api/board.js` serves the combined board, cached 60 seconds at Vercel's CDN.
 - `api/og.js` draws the share-preview image with today's numbers.
-- `lib/history.js` saves every token's distance from its share once an hour while the US market trades (called from `api/check-alerts.js`, which the Warm board workflow runs every 5 minutes). `api/history.js` serves it: `?v=TSLAx_solana` for one token's sparkline, `?p=issuers` for the peg score per issuer.
+- `lib/history.js` saves every token's distance from its share once an hour while the US market trades (called from `api/check-alerts.js`, which the Warm board workflow runs every 5 minutes). `api/history.js` serves it: `?v=TSLAx_solana` for one token's sparkline, `?p=issuers` for the peg score per issuer, `?p=ranking` for every deep market ranked by peg (the /ranking page).
 - `api/stock.js` serves one page per stock at `/stock/TSLA` (rewritten in `vercel.json`): it fills `templates/stock.html`, which `build.py` writes, with the stock's name, summary and share card, and `board.js` adds the live prices. `/sitemap-stocks.xml` lists every stock page.
 - `board.js` renders the table, ticker tape and spotlight in the browser; `backdrop.js` is the animated chart background.
 

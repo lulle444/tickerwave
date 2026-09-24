@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Chains · Pegwatch</title>
-<meta name="description" content="Robinhood Chain, Solana, Ethereum and BNB Chain compared: stock tokens, volume and how closely they track the share.">
-<link rel="canonical" href="https://usepegwatch.vercel.app/chains">
+<title>Peg ranking · Pegwatch</title>
+<meta name="description" content="Which stock tokens hold their peg: every deep market ranked by how closely it tracks its real share, from hourly readings.">
+<link rel="canonical" href="https://usepegwatch.vercel.app/ranking">
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<meta property="og:title" content="Chains · Pegwatch">
-<meta property="og:description" content="Robinhood Chain, Solana, Ethereum and BNB Chain compared: stock tokens, volume and how closely they track the share.">
-<meta property="og:url" content="https://usepegwatch.vercel.app/chains">
-<meta property="og:image" content="https://usepegwatch.vercel.app/api/og?p=home">
-<meta name="twitter:image" content="https://usepegwatch.vercel.app/api/og?p=home">
+<meta property="og:title" content="Peg ranking · Pegwatch">
+<meta property="og:description" content="Which stock tokens hold their peg: every deep market ranked by how closely it tracks its real share, from hourly readings.">
+<meta property="og:url" content="https://usepegwatch.vercel.app/ranking">
+<meta property="og:image" content="https://usepegwatch.vercel.app/api/og?p=ranking">
+<meta name="twitter:image" content="https://usepegwatch.vercel.app/api/og?p=ranking">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -33,9 +33,9 @@
     <div class="navlinks">
       <a href="/">Stocks</a>
       <a href="/spreads">Spreads</a>
-      <a href="/ranking">Ranking</a>
+      <a href="/ranking" aria-current="page">Ranking</a>
       <a href="/weekend">Weekend</a>
-      <a href="/chains" aria-current="page">Chains</a>
+      <a href="/chains">Chains</a>
       <a href="/alerts">Alerts</a>
       <a href="/learn">Learn</a>
     </div>
@@ -44,34 +44,66 @@
   <div class="mobilenav" aria-label="Sections">
     <a href="/">Stocks</a>
     <a href="/spreads">Spreads</a>
-    <a href="/ranking">Ranking</a>
+    <a href="/ranking" aria-current="page">Ranking</a>
     <a href="/weekend">Weekend</a>
-    <a href="/chains" aria-current="page">Chains</a>
+    <a href="/chains">Chains</a>
     <a href="/alerts">Alerts</a>
     <a href="/learn">Learn</a>
   </div>
 
-  <header class="pagehead banner"><picture class="bannerart"><source srcset="/assets/banner-chains.webp" type="image/webp"><img src="/assets/banner-chains.jpg" alt="" width="1800" height="600" fetchpriority="high"></picture>
+  <header class="pagehead">
     <div>
-      <p class="eyebrow">Chains</p>
-      <h1>Where stock tokens <em>trade.</em></h1>
-      <p class="lede">Every chain and issuer we track, side by side: how many stocks trade there, how much changes hands and how closely the tokens follow the real share.</p>
+      <p class="eyebrow">Peg ranking</p>
+      <h1>Which tokens <em>hold their peg.</em></h1>
+      <p class="lede">Every hour the US market trades we check how far each stock token sits from its real share. Here is every deep market ranked by how closely it has stuck to the share price.</p>
     </div>
   </header>
 
-  <section class="block-sm" aria-label="Chains">
-    <div class="chaingrid" id="chainGrid"><p class="muted">Loading chains…</p></div>
+  <section class="stats panel" aria-label="Key figures">
+    <div><small>Markets ranked</small><strong id="rkCount">–</strong><span id="rkCountSub">&nbsp;</span></div>
+    <div><small>Steady markets</small><strong id="rkFair">–</strong><span id="rkFairSub">&nbsp;</span></div>
+    <div><small>Closest to its share</small><strong id="rkBest">–</strong><span id="rkBestSub">&nbsp;</span></div>
+    <div><small>Furthest from its share</small><strong id="rkWorst">–</strong><span id="rkWorstSub">&nbsp;</span></div>
   </section>
 
-  <section class="block" aria-labelledby="matrixH">
-    <div class="sectionhead"><div><p class="eyebrow">Issuer × chain</p><h2 id="matrixH">Who issues where</h2><p class="sub">Number of stocks with a live market, and their 24h volume.</p></div></div>
-    <div class="tablebox"><table class="matrix"><thead id="matrixHead"></thead><tbody id="matrixRows"><tr><td class="empty">Loading…</td></tr></tbody></table></div>
+  <section class="tablepanel panel" aria-labelledby="rkH">
+    <div class="sectionhead">
+      <div><h2 id="rkH">Every deep market, ranked by peg</h2><p class="sub" id="rkSub">Loading the hourly readings…</p></div>
+    </div>
+    <div class="controls">
+      <div class="chips" role="group" aria-label="Order">
+        <button class="chip" data-rsort="best" aria-pressed="true">Best held</button>
+        <button class="chip" data-rsort="worst" aria-pressed="false">Worst held</button>
+      </div>
+      <div class="chips" role="group" aria-label="Chain" id="rkChains"></div>
+      <span class="grow"></span>
+      <input type="search" id="q" placeholder="Search ticker or company" aria-label="Search ticker or company">
+    </div>
+    <div class="tablebox">
+      <table class="rktable">
+        <thead><tr>
+          <th class="r">#</th><th>Token</th><th class="r">Typical gap</th><th>Within ±0.5%</th><th class="r hm">Worst hour</th><th class="hm">Last readings</th><th class="r hm">Depth</th>
+        </tr></thead>
+        <tbody id="rkRows"><tr><td colspan="7" class="empty">Loading the ranking…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="more"><span id="count"></span><button class="btn ghost small" id="showMore" hidden>Show more</button></div>
   </section>
 
-  <section class="block" aria-labelledby="issuersH">
-    <div class="sectionhead"><div><p class="eyebrow">Issuers</p><h2 id="issuersH">Who holds the shares</h2><p class="sub">Each issuer buys and holds the real shares and mints tokens against them, with its own rules for who can mint, redeem and hold.</p></div></div>
-    <div class="issuergrid" id="issuers"></div>
-  </section>
+  <div class="twocol block-sm">
+    <section class="panel note-card">
+      <p class="eyebrow">How we rank</p>
+      <h3>Typical gap first</h3>
+      <p>For every market over $10k deep with a published share ratio, we take its hourly distance from the share price × its ratio. Markets are ranked by the typical (median) distance, then by how many hours they spent within ±0.5%.</p>
+      <p>Weekend hours are left out: while the stock market is shut the share price is frozen, so a gap then is a guess about Monday, not a missed peg. That lives on the <a href="/weekend">weekend signal</a>.</p>
+    </section>
+    <section class="panel note-card">
+      <p class="eyebrow">What it means</p>
+      <h3>A tight peg is a working arbitrage</h3>
+      <p>A token stays close to its share when someone can mint and redeem it against the real stock. When that link is slow, costly or closed, the token drifts. A market that often sits far from its share is one to trade with care.</p>
+      <p><a href="/learn">Stock tokens explained →</a></p>
+    </section>
+  </div>
 
   <footer class="sitefoot">
     <div class="footgrid">

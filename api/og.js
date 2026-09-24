@@ -87,6 +87,18 @@ const CARDS = {
     if (best) return {eyebrow, big: sgn(best.gap), path, stats, label: `${best.symbol} on ${CHAIN_NAMES[best.chain]} against the real ${s.name} share price`};
     return {eyebrow, big: s.ticker, path, stats, label: `${s.name} as a stock token, compared on every chain`};
   },
+  async ranking(site){
+    const path = "/ranking", H = require("../lib/history");
+    const r = await H.ranking(await currentBoard(site)).catch(() => null), all = (r && r.tokens) || [];
+    if (!all.length) return {eyebrow: "Peg ranking", big: "Hourly", path,
+      label: "Every stock token checked against its real share, every hour the market trades, and ranked by how well it holds its peg.",
+      stats: [["±0.5%", "the line we call fair"], ["$10k+", "deep markets only"], ["Weekly", "ranking window"]]};
+    const b = all[0], w = all[all.length - 1], good = all.filter(t => t.within >= 0.9).length;
+    const pm = g => "±" + (g * 100).toFixed(2) + "%";
+    return {eyebrow: "Peg ranking · " + (r.hours < 24 ? "Early" : "Past 7 days"), big: b.symbol, path,
+      label: `on ${CHAIN_NAMES[b.chain]}: closest to its share, typically ${pm(b.typical)}`,
+      stats: [[fmtN(all.length), "deep markets ranked"], [Math.round(good / all.length * 100) + "%", "almost always within ±0.5%"], [pm(w.typical), `furthest: ${w.symbol}`]]};
+  },
   async weekend(site){
     const path = "/weekend";
     if (!marketOpen()){
@@ -147,7 +159,7 @@ module.exports = async function handler(req, res){
     const img = new ImageResponse(card(c, logoUri()), {width: 1200, height: 630, fonts: f.length ? f : undefined});
     const buf = Buffer.from(await img.arrayBuffer());
     res.setHeader("Content-Type", "image/png");
-    res.setHeader("Cache-Control", `public, s-maxage=${p === "weekend" || p === "stock" ? 900 : 3600}, stale-while-revalidate=86400`);
+    res.setHeader("Cache-Control", `public, s-maxage=${p === "weekend" || p === "stock" || p === "ranking" ? 900 : 3600}, stale-while-revalidate=86400`);
     res.status(200).end(buf);
   } catch (e) {
     console.error("og", p, e);

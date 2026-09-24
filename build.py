@@ -83,7 +83,7 @@ HEAD = """<!doctype html>
 <div class="wrap">
 """
 
-NAV_ITEMS = [("/", "Stocks"), ("/spreads", "Spreads"), ("/weekend", "Weekend"), ("/chains", "Chains"), ("/alerts", "Alerts"), ("/learn", "Learn")]
+NAV_ITEMS = [("/", "Stocks"), ("/spreads", "Spreads"), ("/ranking", "Ranking"), ("/weekend", "Weekend"), ("/chains", "Chains"), ("/alerts", "Alerts"), ("/learn", "Learn")]
 
 
 def nav(path):
@@ -112,7 +112,7 @@ FOOT = """
         <a class="logo" href="/" aria-label="{{name}} home"><img src="LOGO_SRC" alt="" width="26" height="26"><span class="word">{{w1}}<b>{{w2}}</b></span></a>
         <p>{{tagline}} Independent, read-only and free. Live on-chain data, no paid placements.</p>""" + X_LINK + """
       </div>
-      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/weekend">Weekend signal</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
+      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/ranking">Peg ranking</a><a href="/weekend">Weekend signal</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
       <nav aria-label="Learn"><h4>Learn</h4><a href="/learn">Stock tokens explained</a><a href="/learn#checklist">Before you trade</a><a href="/#how">How we calculate</a></nav>
       <nav aria-label="Company"><h4>Company</h4><a href="/about">About</a><a href="/about#disclaimer">Disclaimer</a></nav>
     </div>
@@ -538,11 +538,61 @@ STOCK = """
   </section>
 """
 
-OG = {"/": "/api/og?p=home", "/spreads": "/api/og?p=spreads", "/weekend": "/api/og?p=weekend"}
+RANKING = pagehead("Peg ranking", "Which tokens <em>hold their peg.</em>",
+  "Every hour the US market trades we check how far each stock token sits from its real share. Here is every deep market ranked by how closely it has stuck to the share price.") + """
+  <section class="stats panel" aria-label="Key figures">
+    <div><small>Markets ranked</small><strong id="rkCount">–</strong><span id="rkCountSub">&nbsp;</span></div>
+    <div><small>Steady markets</small><strong id="rkFair">–</strong><span id="rkFairSub">&nbsp;</span></div>
+    <div><small>Closest to its share</small><strong id="rkBest">–</strong><span id="rkBestSub">&nbsp;</span></div>
+    <div><small>Furthest from its share</small><strong id="rkWorst">–</strong><span id="rkWorstSub">&nbsp;</span></div>
+  </section>
+
+  <section class="tablepanel panel" aria-labelledby="rkH">
+    <div class="sectionhead">
+      <div><h2 id="rkH">Every deep market, ranked by peg</h2><p class="sub" id="rkSub">Loading the hourly readings…</p></div>
+    </div>
+    <div class="controls">
+      <div class="chips" role="group" aria-label="Order">
+        <button class="chip" data-rsort="best" aria-pressed="true">Best held</button>
+        <button class="chip" data-rsort="worst" aria-pressed="false">Worst held</button>
+      </div>
+      <div class="chips" role="group" aria-label="Chain" id="rkChains"></div>
+      <span class="grow"></span>
+      <input type="search" id="q" placeholder="Search ticker or company" aria-label="Search ticker or company">
+    </div>
+    <div class="tablebox">
+      <table class="rktable">
+        <thead><tr>
+          <th class="r">#</th><th>Token</th><th class="r">Typical gap</th><th>Within ±0.5%</th><th class="r hm">Worst hour</th><th class="hm">Last readings</th><th class="r hm">Depth</th>
+        </tr></thead>
+        <tbody id="rkRows"><tr><td colspan="7" class="empty">Loading the ranking…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="more"><span id="count"></span><button class="btn ghost small" id="showMore" hidden>Show more</button></div>
+  </section>
+
+  <div class="twocol block-sm">
+    <section class="panel note-card">
+      <p class="eyebrow">How we rank</p>
+      <h3>Typical gap first</h3>
+      <p>For every market over $10k deep with a published share ratio, we take its hourly distance from the share price × its ratio. Markets are ranked by the typical (median) distance, then by how many hours they spent within ±0.5%.</p>
+      <p>Weekend hours are left out: while the stock market is shut the share price is frozen, so a gap then is a guess about Monday, not a missed peg. That lives on the <a href="/weekend">weekend signal</a>.</p>
+    </section>
+    <section class="panel note-card">
+      <p class="eyebrow">What it means</p>
+      <h3>A tight peg is a working arbitrage</h3>
+      <p>A token stays close to its share when someone can mint and redeem it against the real stock. When that link is slow, costly or closed, the token drifts. A market that often sits far from its share is one to trade with care.</p>
+      <p><a href="/learn">Stock tokens explained →</a></p>
+    </section>
+  </div>
+"""
+
+OG = {"/": "/api/og?p=home", "/spreads": "/api/og?p=spreads", "/weekend": "/api/og?p=weekend", "/ranking": "/api/og?p=ranking"}
 PAGES = [
   ("index.html", "/", "{{name}} · Stock tokens on every chain", "{desc}", "", HOME, "board.js"),
   ("spreads.html", "/spreads", "Spreads · {{name}}", "The same stock, priced differently across chains: the cheapest and priciest token of every stock, live.", "", SPREADS, "board.js"),
   ("weekend.html", "/weekend", "Weekend signal · {{name}}", "The stock market closes for the weekend, stock tokens don’t. See where tokens say every stock reopens on Monday, live from Friday night.", "", WEEKEND, "board.js"),
+  ("ranking.html", "/ranking", "Peg ranking · {{name}}", "Which stock tokens hold their peg: every deep market ranked by how closely it tracks its real share, from hourly readings.", "", RANKING, "board.js"),
   ("chains.html", "/chains", "Chains · {{name}}", "Robinhood Chain, Solana, Ethereum and BNB Chain compared: stock tokens, volume and how closely they track the share.", "", CHAINSPAGE, "board.js"),
   ("alerts.html", "/alerts", "Alerts · {{name}}", "Free Telegram alerts when a stock token trades away from its share price or chains disagree.", "", ALERTS, "board.js"),
   ("learn.html", "/learn", "Learn · {{name}}", "Stock tokens explained: share ratios, price gaps, chains and five checks before you trade.", "", LEARN, "board.js"),
