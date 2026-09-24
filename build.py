@@ -335,7 +335,7 @@ SPREADS = pagehead("Spreads", "Same stock. <em>Different price.</em>",
 """
 
 CHAINSPAGE = pagehead("Chains", "Where stock tokens <em>trade.</em>",
-  "Every chain and issuer we track, side by side: how many stocks trade there, how much changes hands and how closely the tokens follow the real share.") + """
+  "Every chain and issuer we track, side by side: how many stocks trade there, how much changes hands and how closely the tokens follow the real share.").replace(PH, banner("banner-chains"), 1) + """
   <section class="block-sm" aria-label="Chains">
     <div class="chaingrid" id="chainGrid"><p class="muted">Loading chains…</p></div>
   </section>
