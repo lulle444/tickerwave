@@ -26,4 +26,5 @@ jobs:
           curl -sS --max-time 60 "https://usepegwatch.vercel.app/api/history?p=issuers&t=$(date +%s)"; echo
           curl -sS --max-time 60 "https://usepegwatch.vercel.app/api/history?v=NVDA_robinhood&t=$(date +%s)" | jq -c '{v, n: (.points | length), last: .points[-1]}' || true
           curl -sS --max-time 60 "https://usepegwatch.vercel.app/api/history?p=ranking&t=$(date +%s)" | jq -c '{hours, ranked: (.tokens | length), best: (.tokens[:3] | map({symbol, chain, typical, within, n})), worst: (.tokens[-1:] | map({symbol, chain, typical}))}' || true
+          curl -sS --max-time 60 "https://usepegwatch.vercel.app/api/history?p=report&t=$(date +%s)" | jq -c '{live, week, weeks, report: (.report | if . then {week, hours, markets, steady, best: .best[0].symbol, worst: .worst[0].symbol, swing: .swing.symbol, issuers: [.issuers[].id]} else null end)}' || true
           curl -sS --max-time 60 "https://usepegwatch.vercel.app/api/history?p=weekend&t=$(date +%s)" | jq -c '{closed, week, latest: (.latest | if . then {week, t: .snap.t, stocks: (.snap.stocks | length), res: (.res // {} | keys)} else null end), past}' || true
