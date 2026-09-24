@@ -134,6 +134,12 @@ FOOT = """
 HEAD = HEAD.replace('<link rel="icon" type="image/svg+xml" href="/assets/logo-mark.svg">', ICON)
 FOOT = FOOT.replace('src="LOGO_SRC"', f'src="{LOGO_SRC}"')
 
+# Louise's 3D renders as page headers: text on the dark left, art on the right (see .bannerart in styles.css).
+PH = '<header class="pagehead">'
+def banner(file):
+    return (f'<header class="pagehead banner"><picture class="bannerart"><source srcset="/assets/{file}.webp" type="image/webp">'
+            f'<img src="/assets/{file}.jpg" alt="" width="1800" height="600" fetchpriority="high"></picture>')
+
 def pagehead(eyebrow, h1, sub):
     return f"""
   <header class="pagehead">
@@ -227,8 +233,7 @@ HOME = """
 """
 
 ABOUT = pagehead("About {{name}}", "Same stock. A clearer view.",
-  "{{name}} compares tokenized stocks across blockchains and issuers, so you can see which version of a stock tracks the real share best and where it trades.").replace(
-  '<header class="pagehead">', '<header class="pagehead banner"><picture class="bannerart"><source srcset="/assets/banner.webp" type="image/webp"><img src="/assets/banner.jpg" alt="" width="1800" height="600" fetchpriority="high"></picture>', 1) + """
+  "{{name}} compares tokenized stocks across blockchains and issuers, so you can see which version of a stock tracks the real share best and where it trades.").replace(PH, banner("banner"), 1) + """
   <section class="block" aria-labelledby="princH">
     <div class="sectionhead"><div><p class="eyebrow">What we stand for</p><h2 id="princH">Three principles</h2></div></div>
     <div class="steps">
@@ -275,7 +280,7 @@ BELL_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><
 BOT = B.get("telegram") or ""
 
 SPREADS = pagehead("Spreads", "Same stock. <em>Different price.</em>",
-  "When one stock trades as tokens on several chains, the versions rarely cost exactly the same. Here is how far apart the cheapest and the priciest token of each stock are right now, counting only markets deep enough to trade.") + """
+  "When one stock trades as tokens on several chains, the versions rarely cost exactly the same. Here is how far apart the cheapest and the priciest token of each stock are right now, counting only markets deep enough to trade.").replace(PH, banner("banner-spreads"), 1) + """
   <section class="stats panel" aria-label="Key figures">
     <div><small>Stocks compared</small><strong id="pStocks">–</strong><span id="pStocksSub">&nbsp;</span></div>
     <div><small>Widest spread</small><strong id="pWide">–</strong><span id="pWideSub">&nbsp;</span></div>
@@ -347,7 +352,7 @@ CHAINSPAGE = pagehead("Chains", "Where stock tokens <em>trade.</em>",
 """
 
 LEARN = pagehead("Learn", "Stock tokens, <em>explained.</em>",
-  "What a stock token is, why the same stock can cost different amounts on different chains, and what to check before you trade one.") + """
+  "What a stock token is, why the same stock can cost different amounts on different chains, and what to check before you trade one.").replace(PH, banner("banner-learn"), 1) + """
   <div class="learn">
     <article class="panel note-card">
       <p class="eyebrow">01 · Basics</p>
@@ -422,7 +427,7 @@ ALERTS_SOON = """
   </section>
 """
 WEEKEND = pagehead("Weekend signal", "Where tokens say stocks <em>reopen.</em>",
-  "From Friday 8 pm to Sunday 8 pm New York time the stock market is shut, but stock tokens keep trading. Their price against Friday’s close is the market’s live guess at where each stock reopens.") + """
+  "From Friday 8 pm to Sunday 8 pm New York time the stock market is shut, but stock tokens keep trading. Their price against Friday’s close is the market’s live guess at where each stock reopens.").replace(PH, banner("banner-weekend"), 1) + """
   <section class="wkstatus panel" id="wkStatus" aria-live="polite">
     <div><p class="eyebrow" id="wkMode">Weekend signal</p><h2 id="wkTitle">Loading…</h2><p id="wkText" class="muted"></p>""" + (f"""<a class="btn small wkbot" href="https://t.me/{BOT}?start=wk" target="_blank" rel="noopener">{BELL_SVG} Get it on Telegram</a>""" if BOT else "") + """</div>
     <div class="wkclock"><small id="wkClockLabel">&nbsp;</small><strong id="wkClock" class="num">–</strong><span id="wkClockAt">&nbsp;</span></div>
@@ -479,7 +484,7 @@ WEEKEND = pagehead("Weekend signal", "Where tokens say stocks <em>reopen.</em>",
 """
 
 ALERTS = pagehead("Alerts", "Hear it <em>first.</em>",
-  "Get a Telegram message the moment a stock token trades away from its share price, or when the same stock is priced differently across chains.") + (ALERTS_ON if BOT else ALERTS_SOON)
+  "Get a Telegram message the moment a stock token trades away from its share price, or when the same stock is priced differently across chains.").replace(PH, banner("banner-alerts"), 1) + (ALERTS_ON if BOT else ALERTS_SOON)
 
 OG = {"/": "/api/og?p=home", "/spreads": "/api/og?p=spreads", "/weekend": "/api/og?p=weekend"}
 PAGES = [
