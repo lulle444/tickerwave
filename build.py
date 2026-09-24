@@ -23,21 +23,25 @@ def rgb(hexcol):
     return ",".join(str(int(h[i:i + 2], 16)) for i in (0, 2, 4))
 
 
-# ---------- brand.css: the only place colors are set ----------
+# ---------- brand.css: the only place colors and fonts are set ----------
+F = B["fonts"]
 css = [":root{"]
 for k, v in C.items():
     css.append(f"  --b-{k}:{v};")
-css.append(f"  --ink-rgb:{rgb(C['ink'])};")
-for g in ("glowA", "glowB", "glowC", "glowD"):
-    css.append(f"  --{g}-rgb:{rgb(C[g])};")
+for k in ("accent", "accent2", "up", "down", "ink"):
+    css.append(f"  --{k}-rgb:{rgb(C[k])};")
+for k, v in F.items():
+    css.append(f'  --f-{k}:"{v}";')
 css.append("}")
 open(os.path.join(ROOT, "brand.css"), "w").write("/* Written by build.py from brand.json. Edit brand.json instead. */\n" + "\n".join(css) + "\n")
+FONTS_URL = "https://fonts.googleapis.com/css2?" + "&".join(
+    "family=" + F[k].replace(" ", "+") + ":wght@" + w for k, w in (("display", "500;600;700"), ("body", "400;500;600"), ("mono", "400;500;600"))) + "&display=swap"
 
 # ---------- logo mark: a wave that turns into a rising price line ----------
 LOGO = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{C['accent2']}"/><stop offset="1" stop-color="{C['buttonTo']}"/></linearGradient></defs>
-  <rect width="64" height="64" rx="16" fill="url(#g)"/>
-  <path d="M9 41c5 0 6-8 11-8s6 8 11 8l8-14 6 6 10-15" fill="none" stroke="#fff" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="64" height="64" rx="14" fill="{C['panel2']}"/>
+  <rect x=".75" y=".75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="{C['line']}" stroke-width="1.5"/>
+  <path d="M9 41c5 0 6-8 11-8s6 8 11 8l8-14 6 6 10-15" fill="none" stroke="{C['accent']}" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 """
 open(os.path.join(ROOT, "assets", "logo-mark.svg"), "w").write(LOGO)
@@ -61,15 +65,16 @@ HEAD = """<!doctype html>
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">{xsite}
-<meta name="theme-color" content="{ground}">
+<meta name="theme-color" content="{themecolor}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Montserrat:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="{fonts}">
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/brand.css">{extra}
 </head>
 <body{attrs}>
-<canvas id="tide" aria-hidden="true"></canvas>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="tape" id="tape" aria-label="Live stock-token prices"><div class="tape-track" id="tapeTrack"></div></div>
 <div class="wrap">
 """
 
@@ -78,7 +83,7 @@ NAV_ITEMS = [("/", "Stocks"), ("/#chains", "Chains"), ("/#how", "How it works"),
 
 def nav(path):
     links = "\n".join('      <a href="' + h + '"' + (' aria-current="page"' if h == path else '') + '>' + t + '</a>' for h, t in NAV_ITEMS)
-    return f"""  <nav class="nav glass" aria-label="Main">
+    return f"""  <nav class="nav" aria-label="Main">
     <a class="logo" href="/" aria-label="{{{{name}}}} home"><img src="/assets/logo-mark.svg" alt="" width="36" height="36"><span class="word">{{{{w1}}}}<b>{{{{w2}}}}</b></span></a>
     <div class="navlinks">
 {links}
@@ -110,7 +115,6 @@ FOOT = """
     </div>
   </footer>
 </div>
-<script src="/chart.js"></script>
 <script src="/{script}"></script>
 <script src="/backdrop.js"></script>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
@@ -133,7 +137,7 @@ def pagehead(eyebrow, h1, sub):
 
 
 HOME = """
-  <header class="hero solo" id="top">
+  <header class="hero" id="top">
     <div>
       <p class="eyebrow">Stock tokens · Every chain</p>
       <h1>One stock. <em>Every chain.</em></h1>
@@ -144,16 +148,21 @@ HOME = """
       </div>
       <p class="trust">Live prices from the chains · No sign-up · Independent</p>
     </div>
+    <aside class="spot panel" id="spot" aria-live="polite" aria-label="One stock across chains">
+      <div class="spothead"><div><p class="eyebrow">Spotlight</p><h3 id="spotName">Loading…</h3></div><div class="spotref"><small>Share price</small><strong id="spotRef">–</strong></div></div>
+      <ul class="spotrows" id="spotRows"></ul>
+      <p class="spotfoot"><span>Centre line = the real share. Bars show each token’s premium or discount.</span><span class="spotnav" id="spotNav" role="group" aria-label="Pick a stock"></span></p>
+    </aside>
   </header>
 
-  <section class="gauge glass" aria-label="Key figures">
+  <section class="stats panel" aria-label="Key figures">
     <div><small>Stocks</small><strong id="gStocks">–</strong><span id="gStocksSub">&nbsp;</span></div>
     <div><small>Token versions</small><strong id="gVersions">–</strong><span id="gVersionsSub">&nbsp;</span></div>
     <div><small>Traded on chain, 24h</small><strong id="gVolume">–</strong><span id="gVolumeSub">&nbsp;</span></div>
     <div><small>Closest to the share</small><strong id="gBest">–</strong><span id="gBestSub">&nbsp;</span></div>
   </section>
 
-  <section class="tablepanel glass" id="board" aria-labelledby="boardH">
+  <section class="tablepanel panel" id="board" aria-labelledby="boardH">
     <div class="sectionhead">
       <div><h2 id="boardH">Every stock, every version</h2><p class="mkt" id="mkt">Checking market hours…</p></div>
     </div>
@@ -189,15 +198,15 @@ HOME = """
   <section class="block" id="how" aria-labelledby="howH">
     <div class="sectionhead"><div><p class="eyebrow">How it works</p><h2 id="howH">Two prices, one gap</h2></div></div>
     <ol class="steps">
-      <li class="glass"><span class="stepnum">01</span><h3>The share</h3><p>We take the live bid and ask for the real share, adjusted for each token’s share ratio after dividends and splits.</p></li>
-      <li class="glass"><span class="stepnum">02</span><h3>The token</h3><p>For every version on every chain we read the price in its deepest on-chain market, plus how much money sits in it and what traded in the last 24 hours.</p></li>
-      <li class="glass"><span class="stepnum">03</span><h3>The gap</h3><p>On-chain price divided by the share price, minus one. Within ±0.5% counts as fair. Thin markets are flagged, because one small trade can move them.</p></li>
+      <li class="panel"><span class="stepnum">01</span><h3>The share</h3><p>We take the live bid and ask for the real share, adjusted for each token’s share ratio after dividends and splits.</p></li>
+      <li class="panel"><span class="stepnum">02</span><h3>The token</h3><p>For every version on every chain we read the price in its deepest on-chain market, plus how much money sits in it and what traded in the last 24 hours.</p></li>
+      <li class="panel"><span class="stepnum">03</span><h3>The gap</h3><p>On-chain price divided by the share price, minus one. Within ±0.5% counts as fair. Thin markets are flagged, because one small trade can move them.</p></li>
     </ol>
   </section>
 
   <section class="block faq" id="faq" aria-labelledby="faqH">
     <div class="sectionhead"><div><p class="eyebrow">FAQ</p><h2 id="faqH">Questions, answered</h2></div></div>
-    <div class="faqlist glass">
+    <div class="faqlist panel">
       <details><summary>What is a stock token?</summary><p>A token on a blockchain that tracks one share of a real company. The issuer buys and holds the shares, and lets approved partners mint and redeem tokens against them. Holding the token gives you the price exposure, not shareholder rights such as voting.</p></details>
       <details><summary>Why can the same stock have different prices?</summary><p>Each version trades in its own markets on its own chain. Arbitrage pulls them toward the share price, but fees, market depth and who is allowed to mint and redeem leave small gaps. When the US market is closed, tokens keep trading while the share price stands still.</p></details>
       <details><summary>Is {{name}} free?</summary><p>Yes. No sign-up, no wallet connection and no fee. {{name}} is read-only and never touches your funds.</p></details>
@@ -211,26 +220,26 @@ ABOUT = pagehead("About {{name}}", "Same stock. A clearer view.",
   <section class="block" aria-labelledby="princH">
     <div class="sectionhead"><div><p class="eyebrow">What we stand for</p><h2 id="princH">Three principles</h2></div></div>
     <div class="steps">
-      <article class="glass"><span class="stepnum">01</span><h3>Independent</h3><p>No issuer or exchange pays for a place in the table. The order follows the column you sort by, nothing else.</p></article>
-      <article class="glass"><span class="stepnum">02</span><h3>Transparent</h3><p>Every price links back to the public market it came from, and the method is written out on the front page.</p></article>
-      <article class="glass"><span class="stepnum">03</span><h3>Non-custodial</h3><p>{{name}} is read-only. No wallet connection, no deposits, no sign-up.</p></article>
+      <article class="panel"><span class="stepnum">01</span><h3>Independent</h3><p>No issuer or exchange pays for a place in the table. The order follows the column you sort by, nothing else.</p></article>
+      <article class="panel"><span class="stepnum">02</span><h3>Transparent</h3><p>Every price links back to the public market it came from, and the method is written out on the front page.</p></article>
+      <article class="panel"><span class="stepnum">03</span><h3>Non-custodial</h3><p>{{name}} is read-only. No wallet connection, no deposits, no sign-up.</p></article>
     </div>
   </section>
 
   <div class="twocol block">
-    <div class="glass note-card">
+    <div class="panel note-card">
       <p class="eyebrow">Data</p>
       <h3>Where the numbers come from</h3>
       <p>Token lists and share ratios come from each issuer’s public data. On-chain prices, market depth and volume come from DexScreener, which indexes the exchanges on each chain. Share prices come from live quotes for the underlying stock.</p>
     </div>
-    <div class="glass note-card">
+    <div class="panel note-card">
       <p class="eyebrow">Business model</p>
       <h3>How {{name}} stays free</h3>
       <p>{{name}} is free and has no paid placements. If we add sponsored spots later, they’ll be clearly labelled and kept outside the table.</p>
     </div>
   </div>
 
-  <section class="block glass note-card" id="disclaimer" aria-labelledby="discH">
+  <section class="block panel note-card" id="disclaimer" aria-labelledby="discH">
     <p class="eyebrow">Disclaimer</p>
     <h2 id="discH" style="font-size:22px">Not financial advice</h2>
     <p>{{name}} provides information for general educational purposes only. Nothing on this site is financial, investment, tax or legal advice, or a recommendation to buy or sell any asset.</p>
@@ -241,7 +250,7 @@ ABOUT = pagehead("About {{name}}", "Same stock. A clearer view.",
 
 NOTFOUND = pagehead("Page not found", "This ticker isn’t listed.",
   "The link may be old or mistyped. Every stock token we track is one tap away.") + """
-  <div class="glass note-card block-sm">
+  <div class="panel note-card block-sm">
     <p class="eyebrow">Where to next</p>
     <div class="cta-row" style="display:flex;flex-wrap:wrap;gap:10px">
       <a class="btn primary" href="/">All stock tokens</a>
@@ -265,7 +274,7 @@ for fn, path, title, desc, attrs, body, script in PAGES:
         same = f',"sameAs":["https://x.com/{B["x"]}"]' if B["x"] else ""
         extra = '\n<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"{{name}}","url":"{{site}}/","logo":"{{site}}/assets/apple-touch-icon.png"' + same + '},{"@type":"WebSite","name":"{{name}}","url":"{{site}}/"}]}</script>'
     html = HEAD.format(title=title, desc=desc, path="" if path == "/" else path, attrs=attrs, ogimg=OG.get(path, "/api/og?p=home"),
-                       extra=extra, xsite=xsite, ground=C["ground"]) + nav(path) + body + FOOT.replace("{script}", script)
+                       extra=extra, xsite=xsite, themecolor=C["bg"], fonts=FONTS_URL) + nav(path) + body + FOOT.replace("{script}", script)
     html = fill(html)
     if fn == "404.html":
         html = html.replace(f'<link rel="canonical" href="{SITE}/404">', '<meta name="robots" content="noindex">')

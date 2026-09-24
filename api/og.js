@@ -7,7 +7,8 @@ const fs = require("fs"), path = require("path");
 let logo;
 const logoUri = () => logo || (logo = "data:image/svg+xml;base64," + fs.readFileSync(path.join(__dirname, "..", "assets", "logo-mark.svg")).toString("base64"));
 
-const C = {ink: B.colors.ink, muted: B.colors.muted, accent: B.colors.accent, card: "rgba(255,255,255,0.78)", edge: "rgba(20,22,58,0.08)"};
+const K = B.colors, F = B.fonts;
+const C = {ink: K.ink, muted: K.muted, accent: K.accent, card: K.panel, edge: K.line};
 
 const usd = v => {
   const a = Math.abs(v), s = v < 0 ? "−" : "";
@@ -24,7 +25,7 @@ const h = (style, ...children) => ({type: "div", props: {style: {display: "flex"
 let fonts;
 async function loadFonts(){
   if (fonts) return fonts;
-  const want = [["Montserrat", 600], ["Montserrat", 700], ["IBM Plex Sans", 500]];
+  const want = [[F.display, 600], [F.display, 700], [F.body, 500], [F.mono, 500]];
   const out = [];
   await Promise.all(want.map(async ([name, weight]) => {
     try {
@@ -56,19 +57,19 @@ const CARDS = {
 
 function card(c, logo){
   const [w1, w2] = B.wordmark;
-  const stat = ([v, cap]) => h({flexDirection: "column", padding: "22px 28px", borderRadius: 22, background: C.card, border: `1px solid ${C.edge}`, flex: 1},
-    h({fontFamily: "Montserrat", fontWeight: 700, fontSize: 40, color: C.ink}, v),
-    h({fontFamily: "IBM Plex Sans", fontSize: 22, color: C.muted, marginTop: 4}, cap));
-  return h({width: 1200, height: 630, flexDirection: "column", padding: "56px 64px", fontFamily: "IBM Plex Sans", color: C.ink,
-      backgroundImage: `radial-gradient(900px 500px at 90% -10%, ${B.colors.glowD} 0%, rgba(255,255,255,0) 60%), linear-gradient(180deg, ${B.colors.top} 0%, ${B.colors.ground} 55%, ${B.colors.ground2} 100%)`},
+  const stat = ([v, cap]) => h({flexDirection: "column", padding: "22px 28px", borderRadius: 12, background: C.card, border: `1px solid ${C.edge}`, flex: 1},
+    h({fontFamily: F.mono, fontWeight: 500, fontSize: 38, color: C.ink}, v),
+    h({fontFamily: F.body, fontSize: 22, color: C.muted, marginTop: 4}, cap));
+  return h({width: 1200, height: 630, flexDirection: "column", padding: "56px 64px", fontFamily: F.body, color: C.ink,
+      backgroundColor: K.bg, backgroundImage: `radial-gradient(900px 520px at 95% -15%, ${K.accent2}40 0%, ${K.bg}00 65%), radial-gradient(700px 400px at 0% 110%, ${K.accent}1A 0%, ${K.bg}00 60%)`},
     h({alignItems: "center", justifyContent: "space-between"},
       h({alignItems: "center"},
         {type: "img", props: {src: logo, width: 52, height: 52, style: {marginRight: 16}}},
-        h({fontFamily: "Montserrat", fontWeight: 600, fontSize: 28, letterSpacing: 6, color: C.ink}, w1, h({color: C.accent}, w2))),
-      h({fontFamily: "Montserrat", fontWeight: 600, fontSize: 20, letterSpacing: 5, color: C.accent, textTransform: "uppercase"}, c.eyebrow)),
+        h({fontFamily: F.display, fontWeight: 600, fontSize: 30, letterSpacing: -0.5, color: C.ink}, w1, h({color: C.accent}, w2))),
+      h({fontFamily: F.display, fontWeight: 600, fontSize: 20, letterSpacing: 1, color: C.accent, textTransform: "uppercase"}, c.eyebrow)),
     h({flexDirection: "column", marginTop: 46, flex: 1},
-      h({fontFamily: "Montserrat", fontWeight: 700, fontSize: 132, lineHeight: 1, color: C.accent, letterSpacing: -3}, c.big),
-      h({fontFamily: "IBM Plex Sans", fontWeight: 500, fontSize: 34, color: C.ink, marginTop: 18, maxWidth: 1000, lineHeight: 1.25}, c.label)),
+      h({fontFamily: F.display, fontWeight: 700, fontSize: 132, lineHeight: 1, color: C.accent, letterSpacing: -3}, c.big),
+      h({fontFamily: F.body, fontWeight: 500, fontSize: 34, color: C.ink, marginTop: 18, maxWidth: 1000, lineHeight: 1.25}, c.label)),
     h({gap: 20}, c.stats.map(stat)),
     h({marginTop: 22, fontSize: 20, color: C.muted, justifyContent: "space-between"},
       h({}, B.domain + c.path), h({}, "Live on-chain data · Not financial advice")));

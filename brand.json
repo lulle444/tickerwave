@@ -1,30 +1,33 @@
 {
   "_note": "Everything that names or colors the site lives here. Change it, then run: python3 build.py",
   "name": "Tickerwave",
-  "wordmark": ["TICKER", "WAVE"],
+  "wordmark": [
+    "TICKER",
+    "WAVE"
+  ],
   "tagline": "Every stock token, on every chain.",
   "description": "Tokenized stocks on Robinhood Chain, Solana, Ethereum and more, compared side by side: price against the real share, market depth and volume, live.",
   "domain": "tickerwave.vercel.app",
   "x": "",
   "telegram": "",
   "colors": {
-    "ink": "#14163A",
-    "muted": "#5F6483",
-    "accent": "#4B3FD6",
-    "accent2": "#8A6CF2",
-    "accentSoft": "#E9E6FC",
-    "chart1": "#5146D8",
-    "chart2": "#C2762B",
-    "ground": "#F1F0F8",
-    "ground2": "#E6E4F3",
-    "top": "#F8F7FC",
-    "surface2": "#F3F2FA",
-    "rowHover": "#F7F6FD",
-    "glowA": "#8A6CF2",
-    "glowB": "#4B3FD6",
-    "glowC": "#60A5FA",
-    "glowD": "#C8BEFA",
-    "buttonFrom": "#14163A",
-    "buttonTo": "#3B2FA8"
+    "bg": "#07080D",
+    "bg2": "#0B0E16",
+    "panel": "#0F121B",
+    "panel2": "#151926",
+    "line": "#1E2331",
+    "ink": "#F2F1EA",
+    "muted": "#8A90A2",
+    "accent": "#C8F25A",
+    "accentInk": "#0A0C10",
+    "accent2": "#5B7CFF",
+    "up": "#3DDC97",
+    "down": "#FF6B57",
+    "warn": "#F5B94A"
+  },
+  "fonts": {
+    "display": "Space Grotesk",
+    "body": "Inter",
+    "mono": "JetBrains Mono"
   }
 }

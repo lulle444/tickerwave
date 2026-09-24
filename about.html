@@ -16,17 +16,18 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#F1F0F8">
+<meta name="theme-color" content="#07080D">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Montserrat:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/brand.css">
 </head>
 <body>
-<canvas id="tide" aria-hidden="true"></canvas>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="tape" id="tape" aria-label="Live stock-token prices"><div class="tape-track" id="tapeTrack"></div></div>
 <div class="wrap">
-  <nav class="nav glass" aria-label="Main">
+  <nav class="nav" aria-label="Main">
     <a class="logo" href="/" aria-label="Tickerwave home"><img src="/assets/logo-mark.svg" alt="" width="36" height="36"><span class="word">TICKER<b>WAVE</b></span></a>
     <div class="navlinks">
       <a href="/">Stocks</a>
@@ -54,26 +55,26 @@
   <section class="block" aria-labelledby="princH">
     <div class="sectionhead"><div><p class="eyebrow">What we stand for</p><h2 id="princH">Three principles</h2></div></div>
     <div class="steps">
-      <article class="glass"><span class="stepnum">01</span><h3>Independent</h3><p>No issuer or exchange pays for a place in the table. The order follows the column you sort by, nothing else.</p></article>
-      <article class="glass"><span class="stepnum">02</span><h3>Transparent</h3><p>Every price links back to the public market it came from, and the method is written out on the front page.</p></article>
-      <article class="glass"><span class="stepnum">03</span><h3>Non-custodial</h3><p>Tickerwave is read-only. No wallet connection, no deposits, no sign-up.</p></article>
+      <article class="panel"><span class="stepnum">01</span><h3>Independent</h3><p>No issuer or exchange pays for a place in the table. The order follows the column you sort by, nothing else.</p></article>
+      <article class="panel"><span class="stepnum">02</span><h3>Transparent</h3><p>Every price links back to the public market it came from, and the method is written out on the front page.</p></article>
+      <article class="panel"><span class="stepnum">03</span><h3>Non-custodial</h3><p>Tickerwave is read-only. No wallet connection, no deposits, no sign-up.</p></article>
     </div>
   </section>
 
   <div class="twocol block">
-    <div class="glass note-card">
+    <div class="panel note-card">
       <p class="eyebrow">Data</p>
       <h3>Where the numbers come from</h3>
       <p>Token lists and share ratios come from each issuer’s public data. On-chain prices, market depth and volume come from DexScreener, which indexes the exchanges on each chain. Share prices come from live quotes for the underlying stock.</p>
     </div>
-    <div class="glass note-card">
+    <div class="panel note-card">
       <p class="eyebrow">Business model</p>
       <h3>How Tickerwave stays free</h3>
       <p>Tickerwave is free and has no paid placements. If we add sponsored spots later, they’ll be clearly labelled and kept outside the table.</p>
     </div>
   </div>
 
-  <section class="block glass note-card" id="disclaimer" aria-labelledby="discH">
+  <section class="block panel note-card" id="disclaimer" aria-labelledby="discH">
     <p class="eyebrow">Disclaimer</p>
     <h2 id="discH" style="font-size:22px">Not financial advice</h2>
     <p>Tickerwave provides information for general educational purposes only. Nothing on this site is financial, investment, tax or legal advice, or a recommendation to buy or sell any asset.</p>
@@ -96,7 +97,6 @@
     </div>
   </footer>
 </div>
-<script src="/chart.js"></script>
 <script src="/board.js"></script>
 <script src="/backdrop.js"></script>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>

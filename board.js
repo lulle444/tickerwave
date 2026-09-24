@@ -150,7 +150,7 @@ function detailRow(s){
   const rows = s.versions.map(v => `<tr>
       <td><b>${esc(v.symbol)}</b><small class="sub2">${esc(issuerOf(v.issuer).name)}</small></td>
       <td>${chainTag(v.chain)}</td>
-      <td class="r num">${fmtPrice(v.onchain)}${v.multiplier && Math.abs(v.multiplier - 1) > 1e-6 ? `<small class="sub2">${v.multiplier.toFixed(4)} shares</small>` : ""}</td>
+      <td class="r num">${fmtPrice(v.onchain)}${v.ratioUnknown ? '<small class="sub2">ratio not published</small>' : v.multiplier && Math.abs(v.multiplier - 1) > 1e-6 ? `<small class="sub2">${v.multiplier.toFixed(4)} shares</small>` : ""}</td>
       <td class="r">${gapPill(v, s.stale)}</td>
       <td class="r num hm">${fmtUsd(v.liquidity)}${v.thin && v.onchain != null ? '<small class="sub2 warn">thin</small>' : ""}</td>
       <td class="r num hm">${fmtUsd(v.volume24h)}</td>
@@ -158,7 +158,7 @@ function detailRow(s){
     </tr>`).join("");
   return `<tr class="detail"><td colspan="6"><div class="lbdetail">
     <table class="lbsub"><thead><tr><th>Token</th><th>Chain</th><th class="r">On chain</th><th class="r">Gap</th><th class="r hm">Depth</th><th class="r hm">24h volume</th><th class="r"><span class="visually-hidden">Link</span></th></tr></thead><tbody>${rows}</tbody></table>
-    <p class="lbfoot">Gap compares each token with the share price × its share ratio. Depth and volume are for the token’s markets on that chain.</p>
+    <p class="lbfoot">Gap compares each token with the share price × its share ratio (the shares one token stands for after dividends and splits). Where an issuer doesn’t publish its ratio we assume one share, so the gap can be off by past dividends. Depth and volume are for the token’s markets on that chain.</p>
   </div></td></tr>`;
 }
 
@@ -192,14 +192,59 @@ function renderTable(){
   });
 }
 
+
+/* ---------- ticker tape (every page) ---------- */
+function renderTape(){
+  const track = $("tapeTrack");
+  if (!track) return;
+  const items = state.stocks.flatMap(s => s.versions.filter(v => v.gap != null && !v.thin).map(v => ({s, v})))
+    .sort((a, b) => (b.v.volume24h || 0) - (a.v.volume24h || 0)).slice(0, 40);
+  if (!items.length) return;
+  const cls = g => g > FAIR ? "down" : g < -FAIR ? "up" : "flat";
+  const ul = `<ul>${items.map(({s, v}) => `<li><b>${esc(v.symbol)}</b><span>${esc(chainName(v.chain))}</span>${fmtPrice(v.onchain)}<span class="${cls(v.gap)}">${fmtGap(v.gap)}</span></li>`).join("")}</ul>`;
+  track.innerHTML = ul + ul.replace("<ul>", '<ul aria-hidden="true">');
+}
+
+/* ---------- spotlight: one stock, each version's gap as a bar around the share price ---------- */
+const spot = {list: [], i: 0, timer: 0};
+function pickSpot(){
+  const deep = s => s.versions.filter(v => v.gap != null && !v.thin);
+  let list = state.stocks.filter(s => deep(s).length > 1);
+  if (list.length < 3) list = list.concat(state.stocks.filter(s => deep(s).length === 1 && !list.includes(s)));
+  spot.list = list.sort((a, b) => (deep(b).length > 1) - (deep(a).length > 1) || (b.volume24h || 0) - (a.volume24h || 0)).slice(0, 5);
+  if (spot.i >= spot.list.length) spot.i = 0;
+}
+function renderSpot(){
+  if (!$("spot") || !spot.list.length) return;
+  const s = spot.list[spot.i], vs = s.versions.filter(v => v.gap != null).slice(0, 5);
+  const span = Math.max(0.01, ...vs.map(v => Math.abs(v.gap) * 1.25));
+  $("spotName").innerHTML = `${esc(s.ticker)} <small>${esc(s.name)}</small>`;
+  set("spotRef", fmtPrice(s.ref));
+  $("spotRows").innerHTML = vs.map(v => {
+    const x = Math.max(-1, Math.min(1, v.gap / span)) * 50;
+    return `<li class="spotrow"><div class="who"><b>${esc(v.symbol)}</b><span>${esc(chainName(v.chain))}${v.issuer === "robinhood" ? "" : " · " + esc(issuerOf(v.issuer).short || issuerOf(v.issuer).name)}</span></div>
+      <div class="spotbar" role="img" aria-label="${esc(v.symbol)} ${fmtGap(v.gap)} against the share"><i class="${v.band}" style="left:${50 + Math.min(0, x)}%;width:${Math.abs(x)}%"></i></div>
+      <div class="g ${v.band}">${fmtGap(v.gap)}</div></li>`;
+  }).join("");
+  $("spotNav").innerHTML = spot.list.map((x, i) => `<button type="button" data-spot="${i}" aria-pressed="${i === spot.i}" aria-label="${esc(x.ticker)}"></button>`).join("");
+}
+function spotTick(){
+  clearInterval(spot.timer);
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  spot.timer = setInterval(() => { if (!document.hidden && spot.list.length > 1){ spot.i = (spot.i + 1) % spot.list.length; renderSpot(); } }, 6000);
+}
+
 function render(){
+  renderTape();
   if (!$("rows")) return;
-  renderChips(); renderGauge(); renderMarket(); renderTable(); renderIssuers();
+  pickSpot(); renderSpot(); renderChips(); renderGauge(); renderMarket(); renderTable(); renderIssuers();
 }
 
 /* ---------- events ---------- */
 if ($("rows")){
   document.addEventListener("click", e => {
+    const sp = e.target.closest("[data-spot]");
+    if (sp){ spot.i = +sp.dataset.spot; renderSpot(); spotTick(); return; }
     const chip = e.target.closest(".chip[data-chain]");
     if (chip){
       state.chain = chip.dataset.chain; state.limit = PAGE;
@@ -225,6 +270,6 @@ if ($("rows")){
   $("q").addEventListener("input", e => { state.q = e.target.value; state.limit = PAGE; renderTable(); });
 }
 
-load();
+load().then(spotTick);
 setInterval(() => { if (!document.hidden) load(); }, 120000);
 })();
