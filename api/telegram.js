@@ -30,7 +30,7 @@ async function gapCard(chat, q){
     `On chain <b>${A.price(v.onchain)}</b> vs share <b>${A.price(s.ref * (v.multiplier || 1))}</b> (<b>${A.signed(v.gap)}</b>)\nMarket depth ${A.usd(v.liquidity)}`;
   return send(chat, `<b>${esc(v.symbol)} on ${esc(chainName(board, v.chain))}</b> · ${esc(s.name)}\n${now}\n\n` +
     `Ping me when this token trades this far above or below the share price. Tap a level, or send <code>/gap 1.5</code> for your own.`,
-    {reply_markup: {inline_keyboard: [LEVELS.map(l => ({text: `🔔 ±${l}%`, callback_data: `g|${id}|${l}`})), [{text: `Open ${B.name}`, url: `${A.SITE}/?s=${encodeURIComponent(s.ticker)}`}]]}});
+    {reply_markup: {inline_keyboard: [LEVELS.map(l => ({text: `🔔 ±${l}%`, callback_data: `g|${id}|${l}`})), [{text: `Open ${B.name}`, url: `${A.SITE}/stock/${encodeURIComponent(s.ticker.replace(/\./g, "-"))}`}]]}});
 }
 
 async function spreadCard(chat, t){

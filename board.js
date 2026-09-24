@@ -156,8 +156,8 @@ function pegScore(id){
     <small>${young ? `Based on ${h.hours} hourly reading${h.hours === 1 ? "" : "s"} since ${since}. Firms up over the week.` : `Past ${h.days} days, ${h.hours} hourly readings, up to ${r.markets} markets over $10k.`}</small></div>`;
 }
 // Sparkline of one token's distance from its share: the dashed centre line is the peg.
-function sparkline(pts){
-  const W = 96, H = 26, P = 2, t0 = pts[0][0], t1 = pts[pts.length - 1][0] || t0 + 1;
+function sparkline(pts, W = 96, H = 26){
+  const P = 2, t0 = pts[0][0], t1 = pts[pts.length - 1][0] || t0 + 1;
   const m = Math.max(0.005, ...pts.map(p => Math.abs(p[1])));
   const x = t => P + (W - 2 * P) * (t1 === t0 ? 1 : (t - t0) / (t1 - t0)), y = g => H / 2 - (H / 2 - P) * g / m;
   const d = pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + " " + y(p[1]).toFixed(1)).join("");
@@ -170,7 +170,8 @@ function sparkline(pts){
 function fillSparks(){
   document.querySelectorAll(".sparkcell[data-vid]").forEach(el => {
     const vid = el.dataset.vid, have = peg.tokens.get(vid);
-    const draw = pts => { el.innerHTML = pts && pts.length >= 3 ? sparkline(pts.slice(-24 * 7)) : '<small class="muted">History starting</small>'; };
+    const big = el.classList.contains("big");
+    const draw = pts => { el.innerHTML = pts && pts.length >= 3 ? sparkline(pts.slice(-24 * 7), big ? 150 : 96, big ? 34 : 26) : '<small class="muted">History starting</small>'; };
     if (have !== undefined){ if (have !== "loading") draw(have); return; }
     peg.tokens.set(vid, "loading");
     fetch("/api/history?v=" + encodeURIComponent(vid)).then(r => r.json()).then(j => { peg.tokens.set(vid, j.points || []); fillSparks(); })
@@ -194,19 +195,25 @@ function gapPill(v, soft){
 
 const chainTag = id => `<span class="chaintag c-${esc(id)}">${esc(chainName(id))}</span>`;
 
-function detailRow(s){
-  const rows = s.versions.map(v => `<tr>
-      <td><b>${esc(v.symbol)}</b><small class="sub2">${esc(issuerOf(v.issuer).name)}</small></td>
-      <td>${chainTag(v.chain)}</td>
+const slugOf = t => String(t).replace(/\./g, "-");
+const stockUrl = t => "/stock/" + encodeURIComponent(slugOf(t));
+function versionRows(s, big){
+  return s.versions.map(v => `<tr>
+      <td><b>${esc(v.symbol)}</b><small class="sub2">${esc(issuerOf(v.issuer).name)}</small>${big ? `<small class="sub2 mchain">${esc(chainName(v.chain))}</small>` : ""}</td>
+      <td class="hc">${chainTag(v.chain)}</td>
       <td class="r num">${fmtPrice(v.onchain)}${v.ratioUnknown ? '<small class="sub2">ratio not published</small>' : v.multiplier && Math.abs(v.multiplier - 1) > 1e-6 ? `<small class="sub2">${v.multiplier.toFixed(4)} shares</small>` : ""}</td>
       <td class="r">${gapPill(v, s.stale)}</td>
-      <td class="hm sparkcell" data-vid="${esc(vidOf(v))}"></td>
+      <td class="hm sparkcell${big ? " big" : ""}" data-vid="${esc(vidOf(v))}"></td>
       <td class="r num hm">${fmtUsd(v.liquidity)}${v.thin && v.onchain != null ? '<small class="sub2 warn">thin</small>' : ""}</td>
       <td class="r num hm">${fmtUsd(v.volume24h)}</td>
       <td class="r"><div class="acts">${v.url ? `<a class="trade" href="${esc(v.url)}" target="_blank" rel="noopener" aria-label="View the ${esc(v.symbol)} market">Market ↗</a>` : ""}${bell("g_" + vidOf(v), `Telegram alert when ${v.symbol} on ${chainName(v.chain)} drifts from the share price`)}</div></td>
     </tr>`).join("");
+}
+function detailRow(s){
+  const rows = versionRows(s);
   return `<tr class="detail"><td colspan="6"><div class="lbdetail">
     <table class="lbsub"><thead><tr><th>Token</th><th>Chain</th><th class="r">On chain</th><th class="r">Gap</th><th class="hm">Peg history</th><th class="r hm">Depth</th><th class="r hm">24h volume</th><th class="r"><span class="visually-hidden">Link</span></th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="lbfoot"><a class="stlink" href="${stockUrl(s.ticker)}">Open the ${esc(s.ticker)} page: peg history, alerts and more →</a></p>
     <p class="lbfoot">Gap compares each token with the share price × its share ratio (the shares one token stands for after dividends and splits). Where an issuer doesn’t publish its ratio we assume one share, so the gap can be off by past dividends. Depth and volume are for the token’s markets on that chain.</p>
   </div></td></tr>`;
 }
@@ -268,7 +275,7 @@ function renderSpot(){
   if (!$("spot") || !spot.list.length) return;
   const s = spot.list[spot.i], vs = s.versions.filter(v => v.gap != null).slice(0, 5);
   const span = Math.max(0.01, ...vs.map(v => Math.abs(v.gap) * 1.25));
-  $("spotName").innerHTML = `${esc(s.ticker)} <small>${esc(s.name)}</small>`;
+  $("spotName").innerHTML = `<a href="${stockUrl(s.ticker)}">${esc(s.ticker)} <small>${esc(s.name)}</small></a>`;
   set("spotRef", fmtPrice(s.ref));
   $("spotRows").innerHTML = vs.map(v => {
     const x = Math.max(-1, Math.min(1, v.gap / span)) * 50;
@@ -310,7 +317,7 @@ function renderSpreads(){
   set("pOver", over);
   set("pOverSub", all.length ? `${Math.round(over / all.length * 100)}% of stocks compared` : "–");
   $("spreadRows").innerHTML = list.length ? list.map(x => `<tr>
-      <td><a class="ticker plain" href="/?s=${encodeURIComponent(x.s.ticker)}">${x.s.logo ? `<img src="${esc(x.s.logo)}" alt="" width="30" height="30" loading="lazy" onerror="this.remove()">` : ""}<span class="proto"><b class="asset">${esc(x.s.ticker)}</b><span>${esc(x.s.name)}</span></span></a></td>
+      <td><a class="ticker plain" href="${stockUrl(x.s.ticker)}">${x.s.logo ? `<img src="${esc(x.s.logo)}" alt="" width="30" height="30" loading="lazy" onerror="this.remove()">` : ""}<span class="proto"><b class="asset">${esc(x.s.ticker)}</b><span>${esc(x.s.name)}</span></span></a></td>
       <td class="r"><span class="gap ${x.spread >= 0.01 ? "premium" : x.spread >= FAIR ? "warn" : "fair"}"><span class="num">${fmtGap(x.spread).replace("+", "")}</span></span></td>
       <td>${side(x.lo)}</td>
       <td>${side(x.hi)}</td>
@@ -398,7 +405,7 @@ function renderWeekend(){
   const call = (r, a) => a == null ? '<span class="muted">–</span>' : Math.abs(r.i) < 0.0025 ? '<span class="muted">flat</span>' : Math.sign(a) === Math.sign(r.i) ? '<span class="callok">✓ right way</span>' : '<span class="callno">✗ wrong way</span>';
   $("wkRows").innerHTML = mode === "waiting" ? `<tr><td colspan="6" class="empty">Nothing yet: the table fills in when the market closes on Friday at 8 pm New York time (${esc(fmtWhen(close.at))} your time).</td></tr>`
     : shown.length ? shown.map(r => { const a = out ? out.m[r.k] : null; return `<tr>
-      <td><a class="ticker plain" href="/?s=${encodeURIComponent(r.k)}">${r.lg ? `<img src="${esc(r.lg)}" alt="" width="30" height="30" loading="lazy" onerror="this.remove()">` : ""}<span class="proto"><b class="asset">${esc(r.k)}</b><span>${esc(r.n)}</span></span></a></td>
+      <td><a class="ticker plain" href="${stockUrl(r.k)}">${r.lg ? `<img src="${esc(r.lg)}" alt="" width="30" height="30" loading="lazy" onerror="this.remove()">` : ""}<span class="proto"><b class="asset">${esc(r.k)}</b><span>${esc(r.n)}</span></span></a></td>
       <td class="r">${pill(r.i)}</td>
       ${out ? `<td class="r">${a == null ? '<span class="muted">–</span>' : pill(a)}</td><td class="r">${call(r, a)}</td>` : ""}
       <td class="r num">${fmtPrice(r.c)}</td>
@@ -437,7 +444,7 @@ function renderChains(){
         <div><dt>Typical gap</dt><dd class="num">${track == null ? "–" : "±" + (track * 100).toFixed(2) + "%"}</dd></div>
       </dl>
       <p class="toplabel">Most traded</p>
-      <ul class="toplist">${top.map(v => `<li><a href="/?s=${encodeURIComponent(v.ticker)}"><b class="num">${esc(v.symbol)}</b><span class="num">${fmtUsd(v.volume24h)}</span></a></li>`).join("")}</ul>
+      <ul class="toplist">${top.map(v => `<li><a href="${stockUrl(v.ticker)}"><b class="num">${esc(v.symbol)}</b><span class="num">${fmtUsd(v.volume24h)}</span></a></li>`).join("")}</ul>
     </article>`;
   }).join("");
   $("matrixHead").innerHTML = `<tr><th>Issuer</th>${state.chains.map(c => `<th class="r">${esc(c.name)}</th>`).join("")}</tr>`;
@@ -447,6 +454,28 @@ function renderChains(){
   }).join("")}</tr>`).join("");
 }
 
+/* ---------- one stock: /stock/TSLA (page shell filled by api/stock.js) ---------- */
+function renderStock(){
+  const T = document.body.dataset.ticker, s = state.stocks.find(x => x.ticker === T);
+  if (!s){ $("stRows").innerHTML = `<tr><td colspan="8" class="empty">${esc(T)} isn’t on the board right now. Please try again in a minute.</td></tr>`; return; }
+  set("sRef", fmtPrice(s.ref));
+  set("sRefSub", s.ref == null ? "No live quote" : s.stale ? "Paused while the market is closed" : "Live, refreshed every minute");
+  set("sVersions", s.count);
+  set("sVersionsSub", `on ${s.chainIds.length} chain${s.chainIds.length === 1 ? "" : "s"} · ${[...new Set(s.versions.map(v => issuerOf(v.issuer).short || issuerOf(v.issuer).name))].join(", ")}`);
+  $("sBest").innerHTML = s.best ? `<em class="${s.best.band}">${fmtGap(s.best.gap)}</em>` : "–";
+  set("sBestSub", s.best ? `${s.best.symbol} on ${chainName(s.best.chain)}` : "No deep market yet");
+  const sp = spreadOf(s, THIN);
+  set("sSpread", sp ? fmtGap(sp.spread).replace("+", "") : "–");
+  set("sSpreadSub", sp ? `${sp.lo.symbol} (${chainName(sp.lo.chain)}) is cheapest` : "Needs 2+ deep markets");
+  $("stRows").innerHTML = versionRows(s, true);
+  fillSparks();
+  const ctas = [];
+  if (BOT && sp) ctas.push(`<a class="btn primary small" href="https://t.me/${BOT}?start=s_${encodeURIComponent(slugOf(s.ticker))}" target="_blank" rel="noopener">${BELL} Alert me when chains disagree</a>`);
+  const main = s.best || s.versions[0];
+  if (BOT && main) ctas.push(`<a class="btn small" href="https://t.me/${BOT}?start=g_${encodeURIComponent(vidOf(main))}" target="_blank" rel="noopener">${BELL} Alert me when ${esc(main.symbol)} drifts</a>`);
+  if ($("stCtas")) $("stCtas").innerHTML = ctas.join("") || '<a href="/alerts">How alerts work →</a>';
+}
+
 function render(){
   renderTape();
   if ($("mkt")) renderMarket();
@@ -454,6 +483,7 @@ function render(){
   if ($("spreadRows")) renderSpreads();
   if ($("chainGrid")) renderChains();
   if ($("wkRows")) renderWeekend();
+  if ($("stRows")) renderStock();
   if (!$("rows")) return;
   if (state.deep){   // /?s=TSLA (links from alerts and other pages) opens that stock, whatever the filters
     const i = filtered().sort((a, b) => (b.volume24h ?? -1) - (a.volume24h ?? -1)).findIndex(r => r.ticker === state.deep);

@@ -3,6 +3,7 @@
 const B = require("../brand.json");
 const {currentBoard, spreadOf, marketOpen} = require("../lib/board");
 const W = require("../lib/weekend");
+const CHAIN_NAMES = Object.fromEntries(require("../lib/board").CHAINS.map(c => [c.id, c.name]));
 const fs = require("fs"), path = require("path");
 
 let logo;
@@ -70,6 +71,22 @@ const CARDS = {
       path: "/spreads",
     };
   },
+  // /stock/TSLA: how far apart its tokens trade, or how close the best one sits to the share
+  async stock(site, q){
+    const want = String(q.t || "").replace(/\./g, "-").toUpperCase();
+    const {stocks} = await currentBoard(site);
+    const s = want && stocks.find(x => x.ticker.replace(/\./g, "-").toUpperCase() === want);
+    if (!s) return null;
+    const vs = s.versions.filter(v => v.onchain != null), chains = new Set(vs.map(v => v.chain));
+    const volume = vs.reduce((t, v) => t + (v.volume24h || 0), 0), sp = spreadOf(s);
+    const path = "/stock/" + s.ticker.replace(/\./g, "-"), eyebrow = `${s.ticker} · Stock tokens`;
+    const stats = [[fmtN(vs.length), vs.length === 1 ? "token version" : "token versions"], [fmtN(chains.size), chains.size === 1 ? "chain" : "chains"], [usd(volume), "traded on chain, 24h"]];
+    if (sp) return {eyebrow, big: (sp.spread * 100).toFixed(2) + "%", path, stats,
+      label: `between the cheapest and priciest ${s.name} token right now: ${sp.lo.symbol} on ${CHAIN_NAMES[sp.lo.chain]} vs ${sp.hi.symbol} on ${CHAIN_NAMES[sp.hi.chain]}`};
+    const best = vs.filter(v => v.gap != null).sort((a, b) => (b.liquidity || 0) - (a.liquidity || 0))[0];
+    if (best) return {eyebrow, big: sgn(best.gap), path, stats, label: `${best.symbol} on ${CHAIN_NAMES[best.chain]} against the real ${s.name} share price`};
+    return {eyebrow, big: s.ticker, path, stats, label: `${s.name} as a stock token, compared on every chain`};
+  },
   async weekend(site){
     const path = "/weekend";
     if (!marketOpen()){
@@ -125,12 +142,12 @@ module.exports = async function handler(req, res){
   if (!CARDS[p]) return fallback();
   try {
     const site = "https://" + (req.headers["x-forwarded-host"] || req.headers.host || B.domain);
-    const [c, f, {ImageResponse}] = await Promise.all([CARDS[p](site), loadFonts(), import("@vercel/og")]);
+    const [c, f, {ImageResponse}] = await Promise.all([CARDS[p](site, req.query || {}), loadFonts(), import("@vercel/og")]);
     if (!c) return fallback();
     const img = new ImageResponse(card(c, logoUri()), {width: 1200, height: 630, fonts: f.length ? f : undefined});
     const buf = Buffer.from(await img.arrayBuffer());
     res.setHeader("Content-Type", "image/png");
-    res.setHeader("Cache-Control", `public, s-maxage=${p === "weekend" ? 900 : 3600}, stale-while-revalidate=86400`);
+    res.setHeader("Cache-Control", `public, s-maxage=${p === "weekend" || p === "stock" ? 900 : 3600}, stale-while-revalidate=86400`);
     res.status(200).end(buf);
   } catch (e) {
     console.error("og", p, e);

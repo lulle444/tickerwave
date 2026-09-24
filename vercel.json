@@ -2,6 +2,15 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": {
-    "api/og.js": {"includeFiles": "assets/{logo-mark.svg,logo.png}"}
-  }
+    "api/og.js": {"includeFiles": "assets/{logo-mark.svg,logo.png}"},
+    "api/stock.js": {"includeFiles": "{templates/stock.html,404.html}"}
+  },
+  "rewrites": [
+    {"source": "/stock/:t", "destination": "/api/stock?t=:t"},
+    {"source": "/sitemap-stocks.xml", "destination": "/api/stock?sitemap=1"}
+  ],
+  "redirects": [
+    {"source": "/stock", "destination": "/", "permanent": false},
+    {"source": "/templates/:path*", "destination": "/", "permanent": false}
+  ]
 }

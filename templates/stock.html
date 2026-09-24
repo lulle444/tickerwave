@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__TITLE__</title>
+<meta name="description" content="__DESC__">
+<link rel="canonical" href="https://usepegwatch.vercel.app/stock/__SLUG__">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:title" content="__TITLE__">
+<meta property="og:description" content="__DESC__">
+<meta property="og:url" content="https://usepegwatch.vercel.app/stock/__SLUG__">
+<meta property="og:image" content="https://usepegwatch.vercel.app/api/og?p=stock&amp;t=__SLUG__">
+<meta name="twitter:image" content="https://usepegwatch.vercel.app/api/og?p=stock&amp;t=__SLUG__">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@usepegwatch">
+<meta name="theme-color" content="#07080D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/brand.css">
+</head>
+<body data-ticker="__TICKER__" data-bot="usePegwatchBot">
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="tape" id="tape" aria-label="Live stock-token prices"><div class="tape-track" id="tapeTrack"></div></div>
+<div class="wrap">
+  <nav class="nav" aria-label="Main">
+    <a class="logo" href="/" aria-label="Pegwatch home"><img src="/assets/logo.png" alt="" width="36" height="36"><span class="word">PEG<b>WATCH</b></span></a>
+    <div class="navlinks">
+      <a href="/">Stocks</a>
+      <a href="/spreads">Spreads</a>
+      <a href="/weekend">Weekend</a>
+      <a href="/chains">Chains</a>
+      <a href="/alerts">Alerts</a>
+      <a href="/learn">Learn</a>
+    </div>
+    <div class="navright"><a class="navx" href="https://x.com/usepegwatch" target="_blank" rel="noopener me" aria-label="Follow Pegwatch on X" title="@usepegwatch on X"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a><div class="source" id="source"><span class="dot" id="dot"></span><span id="sourceText">Loading data…</span></div></div>
+  </nav>
+  <div class="mobilenav" aria-label="Sections">
+    <a href="/">Stocks</a>
+    <a href="/spreads">Spreads</a>
+    <a href="/weekend">Weekend</a>
+    <a href="/chains">Chains</a>
+    <a href="/alerts">Alerts</a>
+    <a href="/learn">Learn</a>
+  </div>
+
+  <header class="pagehead stockhead">
+    <div>
+      <p class="eyebrow"><a href="/">Stock tokens</a> / __TICKER__</p>
+      <h1><span class="stlogo">__LOGO__</span>__NAME__ <em>on every chain.</em></h1>
+      <p class="lede" id="stSummary">__SUMMARY__</p>
+    </div>
+  </header>
+
+  <section class="stats panel" aria-label="Key figures">
+    <div><small>Share price</small><strong id="sRef">–</strong><span id="sRefSub">&nbsp;</span></div>
+    <div><small>Token versions</small><strong id="sVersions">–</strong><span id="sVersionsSub">&nbsp;</span></div>
+    <div><small>Closest to the share</small><strong id="sBest">–</strong><span id="sBestSub">&nbsp;</span></div>
+    <div><small>Spread across chains</small><strong id="sSpread">–</strong><span id="sSpreadSub">&nbsp;</span></div>
+  </section>
+
+  <section class="tablepanel panel" aria-labelledby="stH">
+    <div class="sectionhead">
+      <div><h2 id="stH">Every __TICKER__ token, priced against the share</h2><p class="mkt" id="mkt">Checking market hours…</p></div>
+    </div>
+    <div class="tablebox">
+      <table class="sttable">
+        <thead><tr>
+          <th>Token</th><th class="hc">Chain</th><th class="r">On chain</th><th class="r">Gap</th><th class="hm">Peg history, 7 days</th><th class="r hm">Depth</th><th class="r hm">24h volume</th><th class="r"><span class="visually-hidden">Links</span></th>
+        </tr></thead>
+        <tbody id="stRows"><tr><td colspan="8" class="empty">Loading __TICKER__ tokens…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="lbfoot">Gap compares each token with the share price × its share ratio (the shares one token stands for after dividends and splits). Markets under $10k deep are marked thin: a small trade moves their price. The dashed line in the peg history is the share price.</p>
+  </section>
+
+  <div class="twocol block-sm">
+    <section class="panel note-card" id="stAlert">
+      <p class="eyebrow">Alerts</p>
+      <h3>Know when __TICKER__ drifts</h3>
+      <p>Get a free Telegram message when a __TICKER__ token trades away from the share, or when chains start to disagree on its price.</p>
+      <p class="stctas" id="stCtas"></p>
+    </section>
+    <section class="panel note-card">
+      <p class="eyebrow">Before you trade</p>
+      <h3>A token is not the share</h3>
+      <p>Each version is issued by a different company and held by its own custodian. Check who issues it, whether you can redeem it, and how deep its market is. A token far from the share price in a thin market usually means little liquidity, not a bargain.</p>
+      <p><a href="/learn#checklist">Five checks before you trade →</a></p>
+    </section>
+  </div>
+
+  <section class="block-sm" aria-labelledby="moreH">
+    <div class="sectionhead"><div><h2 id="moreH">More stock tokens</h2></div></div>
+    <nav class="stmore" aria-label="Other stocks">__MORE__</nav>
+  </section>
+
+  <footer class="sitefoot">
+    <div class="footgrid">
+      <div class="footbrand">
+        <a class="logo" href="/" aria-label="Pegwatch home"><img src="/assets/logo.png" alt="" width="26" height="26"><span class="word">PEG<b>WATCH</b></span></a>
+        <p>Every stock token, held to its share price. Independent, read-only and free. Live on-chain data, no paid placements.</p>
+        <a class="social" href="https://x.com/usepegwatch" target="_blank" rel="noopener me" aria-label="Pegwatch on X"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>@usepegwatch</a>
+      </div>
+      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/weekend">Weekend signal</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
+      <nav aria-label="Learn"><h4>Learn</h4><a href="/learn">Stock tokens explained</a><a href="/learn#checklist">Before you trade</a><a href="/#how">How we calculate</a></nav>
+      <nav aria-label="Company"><h4>Company</h4><a href="/about">About</a><a href="/about#disclaimer">Disclaimer</a></nav>
+    </div>
+    <div class="footbase">
+      <span>© 2026 Pegwatch. Not financial advice. Stock tokens are not the shares themselves.</span>
+      <span id="updated"></span>
+    </div>
+  </footer>
+</div>
+<script src="/board.js"></script>
+<script src="/backdrop.js"></script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

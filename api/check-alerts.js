@@ -51,7 +51,7 @@ module.exports = async function handler(req, res){
         if (!v || v.gap == null || !(v.liquidity >= THIN) || v.halted) continue;
         level = Math.abs(v.gap * 100);
         msg = `⚖️ <b>${esc(v.symbol)} on ${esc(chainName(v.chain))}</b> is trading <b>${level.toFixed(2)}% ${v.gap > 0 ? "above" : "below"}</b> the ${esc(s.ticker)} share price (your level: ±${A.pct(a.thr)}).\n` +
-          `On chain ${A.price(v.onchain)} vs share ${A.price(s.ref * (v.multiplier || 1))} · depth ${A.usd(v.liquidity)}\n\n${A.SITE}/?s=${encodeURIComponent(s.ticker)}`;
+          `On chain ${A.price(v.onchain)} vs share ${A.price(s.ref * (v.multiplier || 1))} · depth ${A.usd(v.liquidity)}\n\n${A.SITE}/stock/${encodeURIComponent(s.ticker.replace(/\./g, "-"))}`;
       } else if (a.kind === "spread"){
         const sp = spreadOf(s);
         if (!sp) continue;

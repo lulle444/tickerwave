@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /templates/
 
 Sitemap: https://usepegwatch.vercel.app/sitemap.xml
+Sitemap: https://usepegwatch.vercel.app/sitemap-stocks.xml

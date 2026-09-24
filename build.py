@@ -486,6 +486,58 @@ WEEKEND = pagehead("Weekend signal", "Where tokens say stocks <em>reopen.</em>",
 ALERTS = pagehead("Alerts", "Hear it <em>first.</em>",
   "Get a Telegram message the moment a stock token trades away from its share price, or when the same stock is priced differently across chains.").replace(PH, banner("banner-alerts"), 1) + (ALERTS_ON if BOT else ALERTS_SOON)
 
+STOCK = """
+  <header class="pagehead stockhead">
+    <div>
+      <p class="eyebrow"><a href="/">Stock tokens</a> / __TICKER__</p>
+      <h1><span class="stlogo">__LOGO__</span>__NAME__ <em>on every chain.</em></h1>
+      <p class="lede" id="stSummary">__SUMMARY__</p>
+    </div>
+  </header>
+
+  <section class="stats panel" aria-label="Key figures">
+    <div><small>Share price</small><strong id="sRef">–</strong><span id="sRefSub">&nbsp;</span></div>
+    <div><small>Token versions</small><strong id="sVersions">–</strong><span id="sVersionsSub">&nbsp;</span></div>
+    <div><small>Closest to the share</small><strong id="sBest">–</strong><span id="sBestSub">&nbsp;</span></div>
+    <div><small>Spread across chains</small><strong id="sSpread">–</strong><span id="sSpreadSub">&nbsp;</span></div>
+  </section>
+
+  <section class="tablepanel panel" aria-labelledby="stH">
+    <div class="sectionhead">
+      <div><h2 id="stH">Every __TICKER__ token, priced against the share</h2><p class="mkt" id="mkt">Checking market hours…</p></div>
+    </div>
+    <div class="tablebox">
+      <table class="sttable">
+        <thead><tr>
+          <th>Token</th><th class="hc">Chain</th><th class="r">On chain</th><th class="r">Gap</th><th class="hm">Peg history, 7 days</th><th class="r hm">Depth</th><th class="r hm">24h volume</th><th class="r"><span class="visually-hidden">Links</span></th>
+        </tr></thead>
+        <tbody id="stRows"><tr><td colspan="8" class="empty">Loading __TICKER__ tokens…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="lbfoot">Gap compares each token with the share price × its share ratio (the shares one token stands for after dividends and splits). Markets under $10k deep are marked thin: a small trade moves their price. The dashed line in the peg history is the share price.</p>
+  </section>
+
+  <div class="twocol block-sm">
+    <section class="panel note-card" id="stAlert">
+      <p class="eyebrow">Alerts</p>
+      <h3>Know when __TICKER__ drifts</h3>
+      <p>Get a free Telegram message when a __TICKER__ token trades away from the share, or when chains start to disagree on its price.</p>
+      <p class="stctas" id="stCtas"></p>
+    </section>
+    <section class="panel note-card">
+      <p class="eyebrow">Before you trade</p>
+      <h3>A token is not the share</h3>
+      <p>Each version is issued by a different company and held by its own custodian. Check who issues it, whether you can redeem it, and how deep its market is. A token far from the share price in a thin market usually means little liquidity, not a bargain.</p>
+      <p><a href="/learn#checklist">Five checks before you trade →</a></p>
+    </section>
+  </div>
+
+  <section class="block-sm" aria-labelledby="moreH">
+    <div class="sectionhead"><div><h2 id="moreH">More stock tokens</h2></div></div>
+    <nav class="stmore" aria-label="Other stocks">__MORE__</nav>
+  </section>
+"""
+
 OG = {"/": "/api/og?p=home", "/spreads": "/api/og?p=spreads", "/weekend": "/api/og?p=weekend"}
 PAGES = [
   ("index.html", "/", "{{name}} · Stock tokens on every chain", "{desc}", "", HOME, "board.js"),
@@ -495,6 +547,7 @@ PAGES = [
   ("alerts.html", "/alerts", "Alerts · {{name}}", "Free Telegram alerts when a stock token trades away from its share price or chains disagree.", "", ALERTS, "board.js"),
   ("learn.html", "/learn", "Learn · {{name}}", "Stock tokens explained: share ratios, price gaps, chains and five checks before you trade.", "", LEARN, "board.js"),
   ("about.html", "/about", "About · {{name}}", "What {{name}} is, where its data comes from, and the disclaimer.", "", ABOUT, "board.js"),
+  ("templates/stock.html", "/stock/__SLUG__", "__TITLE__", "__DESC__", ' data-ticker="__TICKER__"', STOCK, "board.js"),
   ("404.html", "/404", "Page not found · {{name}}", "This page doesn’t exist. Compare stock tokens across every chain instead.", "", NOTFOUND, "board.js"),
 ]
 
@@ -506,15 +559,16 @@ for fn, path, title, desc, attrs, body, script in PAGES:
     if path == "/":
         same = f',"sameAs":["https://x.com/{B["x"]}"]' if B["x"] else ""
         extra = '\n<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"{{name}}","url":"{{site}}/","logo":"{{site}}/assets/apple-touch-icon.png"' + same + '},{"@type":"WebSite","name":"{{name}}","url":"{{site}}/"}]}</script>'
-    html = HEAD.format(title=title, desc=desc, path="" if path == "/" else path, attrs=attrs, ogimg=OG.get(path, "/api/og?p=home"),
+    html = HEAD.format(title=title, desc=desc, path="" if path == "/" else path, attrs=attrs, ogimg=OG.get(path, "/api/og?p=stock&amp;t=__SLUG__" if path.startswith("/stock/") else "/api/og?p=home"),
                        extra=extra, xsite=xsite, themecolor=C["bg"], fonts=FONTS_URL) + nav(path) + body + FOOT.replace("{script}", script)
     html = fill(html)
     if fn == "404.html":
         html = html.replace(f'<link rel="canonical" href="{SITE}/404">', '<meta name="robots" content="noindex">')
     assert "{{" not in html and "{site}" not in html, (fn, html[html.index("{{"):html.index("{{") + 40])
+    os.makedirs(os.path.dirname(os.path.join(ROOT, fn)), exist_ok=True)
     open(os.path.join(ROOT, fn), "w", encoding="utf-8").write(html)
     print(fn, len(html))
 
 open(os.path.join(ROOT, "sitemap.xml"), "w").write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    + "".join(f"  <url><loc>{SITE}{p}</loc></url>\n" for _, p, *_ in PAGES if p != "/404") + "</urlset>\n")
-open(os.path.join(ROOT, "robots.txt"), "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\n")
+    + "".join(f"  <url><loc>{SITE}{p}</loc></url>\n" for _, p, *_ in PAGES if p != "/404" and not p.startswith("/stock/")) + "</urlset>\n")
+open(os.path.join(ROOT, "robots.txt"), "w").write(f"User-agent: *\nAllow: /\nDisallow: /templates/\n\nSitemap: {SITE}/sitemap.xml\nSitemap: {SITE}/sitemap-stocks.xml\n")
