@@ -188,6 +188,7 @@ function filtered(){
 }
 
 function gapPill(v, soft){
+  if (v && v.unclear) return `<span class="muted" title="The token and share prices don’t line up, likely a split or ratio the issuer hasn’t updated">Unclear</span>`;
   if (!v || v.gap == null) return `<span class="muted">${v && v.onchain == null ? "No market" : "–"}</span>`;
   const label = {premium:"Premium", discount:"Discount", fair:"Fair"}[v.band];
   return `<span class="gap ${v.band}${soft || v.thin ? " soft" : ""}"><span class="num">${fmtGap(v.gap)}</span><small>${label}</small></span>`;
