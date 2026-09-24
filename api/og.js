@@ -6,7 +6,9 @@ const W = require("../lib/weekend");
 const fs = require("fs"), path = require("path");
 
 let logo;
-const logoUri = () => logo || (logo = "data:image/svg+xml;base64," + fs.readFileSync(path.join(__dirname, "..", "assets", "logo-mark.svg")).toString("base64"));
+// brand.json "logo" (a PNG) when set, else the generated mark
+const LOGO_FILE = B.logo ? B.logo.replace(/^\//, "") : "assets/logo-mark.svg";
+const logoUri = () => logo || (logo = `data:${LOGO_FILE.endsWith(".png") ? "image/png" : "image/svg+xml"};base64,` + fs.readFileSync(path.join(__dirname, "..", LOGO_FILE)).toString("base64"));
 
 const K = B.colors, F = B.fonts;
 const C = {ink: K.ink, muted: K.muted, accent: K.accent, card: K.panel, edge: K.line};
@@ -119,7 +121,7 @@ function card(c, logo){
 
 module.exports = async function handler(req, res){
   const p = String((req.query || {}).p || "home");
-  const fallback = () => { res.setHeader("Cache-Control", "public, s-maxage=600"); res.redirect(302, "/assets/logo-mark.svg"); };
+  const fallback = () => { res.setHeader("Cache-Control", "public, s-maxage=600"); res.redirect(302, "/" + LOGO_FILE); };
   if (!CARDS[p]) return fallback();
   try {
     const site = "https://" + (req.headers["x-forwarded-host"] || req.headers.host || B.domain);

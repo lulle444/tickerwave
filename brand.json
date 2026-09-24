@@ -29,5 +29,6 @@
     "display": "Space Grotesk",
     "body": "Inter",
     "mono": "JetBrains Mono"
-  }
+  },
+  "logo": "/assets/logo.png"
 }

@@ -47,6 +47,9 @@ LOGO = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64
 </svg>
 """
 open(os.path.join(ROOT, "assets", "logo-mark.svg"), "w").write(LOGO)
+# A drawn logo in brand.json ("logo": "/assets/logo.png") replaces the generated mark everywhere.
+LOGO_SRC = B.get("logo") or "/assets/logo-mark.svg"
+ICON = '<link rel="icon" type="image/png" href="/assets/favicon.png">' if B.get("logo") else '<link rel="icon" type="image/svg+xml" href="/assets/logo-mark.svg">'
 
 # ---------- page shell ----------
 HEAD = """<!doctype html>
@@ -86,7 +89,7 @@ NAV_ITEMS = [("/", "Stocks"), ("/spreads", "Spreads"), ("/weekend", "Weekend"), 
 def nav(path):
     links = "\n".join('      <a href="' + h + '"' + (' aria-current="page"' if h == path else '') + '>' + t + '</a>' for h, t in NAV_ITEMS)
     return f"""  <nav class="nav" aria-label="Main">
-    <a class="logo" href="/" aria-label="{{{{name}}}} home"><img src="/assets/logo-mark.svg" alt="" width="36" height="36"><span class="word">{{{{w1}}}}<b>{{{{w2}}}}</b></span></a>
+    <a class="logo" href="/" aria-label="{{{{name}}}} home"><img src="{LOGO_SRC}" alt="" width="36" height="36"><span class="word">{{{{w1}}}}<b>{{{{w2}}}}</b></span></a>
     <div class="navlinks">
 {links}
     </div>
@@ -106,7 +109,7 @@ FOOT = """
   <footer class="sitefoot">
     <div class="footgrid">
       <div class="footbrand">
-        <a class="logo" href="/" aria-label="{{name}} home"><img src="/assets/logo-mark.svg" alt="" width="26" height="26"><span class="word">{{w1}}<b>{{w2}}</b></span></a>
+        <a class="logo" href="/" aria-label="{{name}} home"><img src="LOGO_SRC" alt="" width="26" height="26"><span class="word">{{w1}}<b>{{w2}}</b></span></a>
         <p>{{tagline}} Independent, read-only and free. Live on-chain data, no paid placements.</p>""" + X_LINK + """
       </div>
       <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/weekend">Weekend signal</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
@@ -127,6 +130,9 @@ FOOT = """
 </html>
 """
 
+
+HEAD = HEAD.replace('<link rel="icon" type="image/svg+xml" href="/assets/logo-mark.svg">', ICON)
+FOOT = FOOT.replace('src="LOGO_SRC"', f'src="{LOGO_SRC}"')
 
 def pagehead(eyebrow, h1, sub):
     return f"""
