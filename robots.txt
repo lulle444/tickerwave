@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://tickerwave.vercel.app/sitemap.xml
+Sitemap: https://usepegwatch.vercel.app/sitemap.xml
