@@ -6,6 +6,7 @@ const {currentBoard, spreadOf, THIN} = require("../lib/board");
 const A = require("../lib/alerts");
 const WB = require("../lib/weekendbot");
 const W = require("../lib/weekend");
+const R = require("../lib/report");
 
 const LEVELS = [0.5, 1, 2];
 const TICK = /^[A-Z0-9.]{1,12}$/;
@@ -87,10 +88,20 @@ async function weekend(chat){
     {reply_markup: {inline_keyboard: [[{text: "Open the weekend signal", url: `${A.SITE}/weekend`}], [{text: "Stop weekend updates", callback_data: "w|off"}]]}});
 }
 
+async function report(chat){
+  await R.subscribe(chat);
+  const r = await R.latest(await currentBoard(A.SITE).catch(() => null)).catch(() => null);
+  const now = r ? "\n\n" + R.text(r, A.SITE) : "\n\nThe first report is still collecting its hourly readings.";
+  return send(chat, `📊 <b>You’re in for the weekly peg report.</b> Every Friday after the US close I’ll send which stock tokens held their peg best and worst that week.${now}`,
+    {reply_markup: {inline_keyboard: [[{text: "Open the report", url: `${A.SITE}/report`}], [{text: "Stop weekly reports", callback_data: "r|off"}]]}});
+}
+const reportOff = chat => R.unsubscribe(chat).then(() => send(chat, "Weekly reports stopped. Send /report to start them again."));
+
 const WELCOME = `<b>${esc(B.name)} alerts</b> for stock tokens on every chain.\n\n` +
   `• <code>/gap TSLAx 1</code>: when a token trades 1% or more away from the share price.\n` +
   `• <code>/spread TSLA 1</code>: when the cheapest and priciest TSLA tokens across chains are 1% or more apart.\n` +
   `• /weekend: every Sunday, where tokens say stocks reopen, and Monday how it turned out.\n` +
+  `• /report: every Friday, which tokens held their peg best and worst that week.\n` +
   `• /list to see or remove your alerts, /stop to remove everything.\n\n` +
   `Or tap 🔔 next to a token on ${A.SITE}. Checked every 5 minutes. Not financial advice.`;
 
@@ -102,6 +113,7 @@ async function onMessage(m){
     if (/^g_[A-Za-z0-9-]{1,16}_[a-z]{2,12}$/.test(pl)) return gapCard(chat, pl.slice(2));
     if (/^s_[A-Za-z0-9-]{1,12}$/.test(pl)) return spreadCard(chat, pl.slice(2));
     if (pl === "wk") return weekend(chat);
+    if (pl === "rep") return report(chat);
     return send(chat, WELCOME, {reply_markup: {inline_keyboard: [[{text: `Open ${B.name}`, url: A.SITE}]]}});
   }
   if (c === "/gap" || c === "/spread"){
@@ -113,10 +125,12 @@ async function onMessage(m){
     return send(chat, kind === "gap" ? "Tell me which token, like <code>/gap TSLAx 1</code>." : "Tell me which stock, like <code>/spread TSLA 1</code>.");
   }
   if (c === "/weekend") return args[0] && /^(off|stop)$/i.test(args[0]) ? WB.unsubscribe(chat).then(() => send(chat, "Weekend updates stopped. Send /weekend to start them again.")) : weekend(chat);
+  if (c === "/report") return args[0] && /^(off|stop)$/i.test(args[0]) ? reportOff(chat) : report(chat);
   if (c === "/list") return list(chat);
   if (c === "/stop"){
-    const [n, wk] = await Promise.all([A.removeAll(chat), WB.unsubscribe(chat)]);
-    return send(chat, `Removed ${n} alert${n === 1 ? "" : "s"}${wk ? " and stopped weekend updates" : ""}.`);
+    const [n, wk, rp] = await Promise.all([A.removeAll(chat), WB.unsubscribe(chat), R.unsubscribe(chat)]);
+    const also = [wk && "weekend updates", rp && "weekly reports"].filter(Boolean);
+    return send(chat, `Removed ${n} alert${n === 1 ? "" : "s"}${also.length ? " and stopped " + also.join(" and ") : ""}.`);
   }
   return send(chat, WELCOME);
 }
@@ -129,6 +143,7 @@ async function onCallback(q){
   if (kind === "s") return createSpread(chat, a, parseFloat(b));
   if (kind === "d"){ await A.removeAlert(chat, a); return list(chat); }
   if (kind === "w" && a === "off"){ await WB.unsubscribe(chat); return send(chat, "Weekend updates stopped. Send /weekend to start them again."); }
+  if (kind === "r" && a === "off") return reportOff(chat);
 }
 
 module.exports = async function handler(req, res){

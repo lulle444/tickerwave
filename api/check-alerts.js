@@ -10,6 +10,7 @@ const A = require("../lib/alerts");
 const H = require("../lib/history");
 const W = require("../lib/weekend");
 const WB = require("../lib/weekendbot");
+const R = require("../lib/report");
 
 const REARM = 0.5;
 
@@ -19,10 +20,15 @@ module.exports = async function handler(req, res){
     return res.status(200).json({skipped: "database not connected yet"});
   try {
     // Weekend: share prices are frozen, so no alerts; save the hourly weekend signal instead.
+    // The week's peg report is frozen (and sent) once, on the first run after Friday's close.
     if (!marketOpen()){
-      const saved = (await redis("EXISTS", W.K.hour(Math.floor(Date.now() / 3.6e6)))) ? 0 : await W.snapshot(await currentBoard(A.SITE));
+      let board = null;
+      const get = async () => board = board || await currentBoard(A.SITE);
+      const saved = (await redis("EXISTS", W.K.hour(Math.floor(Date.now() / 3.6e6)))) ? 0 : await W.snapshot(await get());
       const told = process.env.TELEGRAM_BOT_TOKEN ? await WB.maybeSendSignal(A.SITE).catch(e => { console.error("weekend signal send:", e); return null; }) : null;
-      return res.status(200).json({skipped: "US market closed, share prices frozen", weekendSignal: saved, told});
+      const rep = (await redis("EXISTS", R.K.week(W.weekOf()))) ? null : await R.freeze(await get()).catch(e => { console.error("peg report:", e); return null; });
+      const reported = rep && process.env.TELEGRAM_BOT_TOKEN ? await WB.broadcast(rep.week, "report", R.text(rep, A.SITE), R.K.subs).catch(e => { console.error("peg report send:", e); return null; }) : null;
+      return res.status(200).json({skipped: "US market closed, share prices frozen", weekendSignal: saved, told, report: rep ? rep.week : null, reported});
     }
     if (!(await redis("SET", A.K.lock, String(Date.now()), "NX", "EX", 240)))
       return res.status(200).json({skipped: "ran recently"});

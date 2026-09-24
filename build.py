@@ -83,7 +83,7 @@ HEAD = """<!doctype html>
 <div class="wrap">
 """
 
-NAV_ITEMS = [("/", "Stocks"), ("/spreads", "Spreads"), ("/ranking", "Ranking"), ("/weekend", "Weekend"), ("/chains", "Chains"), ("/alerts", "Alerts"), ("/learn", "Learn")]
+NAV_ITEMS = [("/", "Stocks"), ("/spreads", "Spreads"), ("/ranking", "Ranking"), ("/report", "Report"), ("/weekend", "Weekend"), ("/chains", "Chains"), ("/alerts", "Alerts"), ("/learn", "Learn")]
 
 
 def nav(path):
@@ -112,7 +112,7 @@ FOOT = """
         <a class="logo" href="/" aria-label="{{name}} home"><img src="LOGO_SRC" alt="" width="26" height="26"><span class="word">{{w1}}<b>{{w2}}</b></span></a>
         <p>{{tagline}} Independent, read-only and free. Live on-chain data, no paid placements.</p>""" + X_LINK + """
       </div>
-      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/ranking">Peg ranking</a><a href="/weekend">Weekend signal</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
+      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/spreads">Spreads</a><a href="/ranking">Peg ranking</a><a href="/report">Weekly report</a><a href="/weekend">Weekend signal</a><a href="/chains">Chains and issuers</a><a href="/alerts">Alerts</a></nav>
       <nav aria-label="Learn"><h4>Learn</h4><a href="/learn">Stock tokens explained</a><a href="/learn#checklist">Before you trade</a><a href="/#how">How we calculate</a></nav>
       <nav aria-label="Company"><h4>Company</h4><a href="/about">About</a><a href="/about#disclaimer">Disclaimer</a></nav>
     </div>
@@ -587,12 +587,54 @@ RANKING = pagehead("Peg ranking", "Which tokens <em>hold their peg.</em>",
   </div>
 """
 
-OG = {"/": "/api/og?p=home", "/spreads": "/api/og?p=spreads", "/weekend": "/api/og?p=weekend", "/ranking": "/api/og?p=ranking"}
+REPORT = pagehead("Weekly peg report", "The week in <em>pegs.</em>",
+  "Every Friday after the US close we turn the week’s hourly readings into one report: which stock tokens held their peg, which drifted, and how each issuer did.") + """
+  <section class="wkstatus reporthead panel" aria-live="polite">
+    <div><p class="eyebrow" id="rpMode">Weekly peg report</p><h2 id="rpTitle">Loading…</h2><p id="rpText" class="muted"></p>
+      <p class="repctas"><a class="btn small" id="rpShare" href="#" target="_blank" rel="noopener">Share on X</a>""" + (f"""<a class="btn small ghost" href="https://t.me/{BOT}?start=rep" target="_blank" rel="noopener">{BELL_SVG} Every Friday on Telegram</a>""" if BOT else "") + """</p></div>
+    <label class="reppick"><small>Week</small><select id="rpPick" aria-label="Pick a week"></select></label>
+  </section>
+
+  <section class="stats panel" aria-label="Key figures">
+    <div><small>Tokens checked</small><strong id="rpCount">–</strong><span id="rpCountSub">&nbsp;</span></div>
+    <div><small>Steady all week</small><strong id="rpFair">–</strong><span id="rpFairSub">&nbsp;</span></div>
+    <div><small>Typical gap</small><strong id="rpTyp">–</strong><span id="rpTypSub">&nbsp;</span></div>
+    <div><small>Biggest miss</small><strong id="rpSwing">–</strong><span id="rpSwingSub">&nbsp;</span></div>
+  </section>
+
+  <div class="twocol">
+    <section class="panel replist" aria-labelledby="rpBestH"><p class="eyebrow">Steadiest</p><h2 id="rpBestH">Held the peg best</h2><ol id="rpBest"><li class="muted">Loading…</li></ol></section>
+    <section class="panel replist" aria-labelledby="rpWorstH"><p class="eyebrow warn">Drifted</p><h2 id="rpWorstH">Furthest from the share</h2><ol id="rpWorst"><li class="muted">Loading…</li></ol></section>
+  </div>
+
+  <section class="block-sm" aria-labelledby="rpIssH">
+    <div class="sectionhead"><div><h2 id="rpIssH">Issuers this week</h2><p class="sub" id="rpIssSub">Typical distance from the share across each issuer’s deep markets.</p></div></div>
+    <div class="repiss" id="rpIssuers"></div>
+  </section>
+
+  <div class="twocol block-sm">
+    <section class="panel note-card">
+      <p class="eyebrow">How the report works</p>
+      <h3>Hourly readings, frozen on Friday</h3>
+      <p>Every hour the US market trades we check how far each stock token over $10k deep sits from its share price × its share ratio. When the market closes on Friday, the week’s readings are ranked by typical (median) gap and saved as that week’s report. Until then you see the week so far.</p>
+      <p>Weekend hours are left out: the share price is frozen then, so a gap is a guess about Monday. That lives on the <a href="/weekend">weekend signal</a>.</p>
+    </section>
+    <section class="panel note-card">
+      <p class="eyebrow">Go deeper</p>
+      <h3>Every market, ranked</h3>
+      <p>The report shows the top and bottom five. The <a href="/ranking">peg ranking</a> has every deep market with its worst hour and recent readings, and each stock has its own page with every version side by side.</p>
+      <p><a href="/ranking">See the full ranking →</a></p>
+    </section>
+  </div>
+"""
+
+OG = {"/": "/api/og?p=home", "/spreads": "/api/og?p=spreads", "/weekend": "/api/og?p=weekend", "/ranking": "/api/og?p=ranking", "/report": "/api/og?p=report"}
 PAGES = [
   ("index.html", "/", "{{name}} · Stock tokens on every chain", "{desc}", "", HOME, "board.js"),
   ("spreads.html", "/spreads", "Spreads · {{name}}", "The same stock, priced differently across chains: the cheapest and priciest token of every stock, live.", "", SPREADS, "board.js"),
   ("weekend.html", "/weekend", "Weekend signal · {{name}}", "The stock market closes for the weekend, stock tokens don’t. See where tokens say every stock reopens on Monday, live from Friday night.", "", WEEKEND, "board.js"),
   ("ranking.html", "/ranking", "Peg ranking · {{name}}", "Which stock tokens hold their peg: every deep market ranked by how closely it tracks its real share, from hourly readings.", "", RANKING, "board.js"),
+  ("report.html", "/report", "Weekly peg report · {{name}}", "Every Friday: which stock tokens held their peg best and worst this week, the biggest miss and how each issuer did.", "", REPORT, "board.js"),
   ("chains.html", "/chains", "Chains · {{name}}", "Robinhood Chain, Solana, Ethereum and BNB Chain compared: stock tokens, volume and how closely they track the share.", "", CHAINSPAGE, "board.js"),
   ("alerts.html", "/alerts", "Alerts · {{name}}", "Free Telegram alerts when a stock token trades away from its share price or chains disagree.", "", ALERTS, "board.js"),
   ("learn.html", "/learn", "Learn · {{name}}", "Stock tokens explained: share ratios, price gaps, chains and five checks before you trade.", "", LEARN, "board.js"),

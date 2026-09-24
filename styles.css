@@ -352,3 +352,29 @@ table.matrix tbody th{font:600 14px var(--display);letter-spacing:0;text-transfo
 .rktable td{vertical-align:middle}
 .rktable .ticker img{border-radius:50%}
 @media (max-width:600px){table.rktable{min-width:0}.rktable .hm{display:none}.rktable th,.rktable td{padding-left:8px;padding-right:8px}.rkbar{width:72px}}
+
+/* weekly peg report */
+.reporthead{align-items:flex-start}
+.repctas{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px!important}
+.repctas .btn{display:inline-flex;align-items:center;gap:8px}
+.reppick{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+.reppick small{font:500 11px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.replist{padding:24px}
+.replist h2{margin:4px 0 14px;font-size:21px}
+.replist .eyebrow{margin:0;font-size:12px;color:var(--accent)}
+.replist .eyebrow.warn{color:var(--warn,#F5B85A)}
+.replist ol{list-style:none;margin:0;padding:0;counter-reset:rp}
+.replist li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line);counter-increment:rp}
+.replist li::before{content:counter(rp);font:500 12px var(--mono);color:var(--muted);width:14px;flex:none}
+.replist li.muted::before{content:none}
+.replist li .ticker{flex:1;min-width:0}
+.repval{display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right}
+.repiss{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.repiss article{padding:20px 22px}
+.repiss .eyebrow{margin:0;font-size:11px}
+.repiss h3{margin:6px 0 0;font-size:20px}
+.repiss p{margin:10px 0 0;font-size:14px}
+.repiss dl{margin:12px 0 0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-top:12px;border-top:1px solid var(--line)}
+.repiss dt{font:500 10.5px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.repiss dd{margin:4px 0 0;font:500 17px var(--mono)}
+@media (max-width:760px){.reporthead{flex-direction:column}.reppick{align-items:flex-start}.replist{padding:18px}.repval small{display:none}}

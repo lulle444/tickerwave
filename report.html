@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Peg ranking · Pegwatch</title>
-<meta name="description" content="Which stock tokens hold their peg: every deep market ranked by how closely it tracks its real share, from hourly readings.">
-<link rel="canonical" href="https://usepegwatch.vercel.app/ranking">
+<title>Weekly peg report · Pegwatch</title>
+<meta name="description" content="Every Friday: which stock tokens held their peg best and worst this week, the biggest miss and how each issuer did.">
+<link rel="canonical" href="https://usepegwatch.vercel.app/report">
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<meta property="og:title" content="Peg ranking · Pegwatch">
-<meta property="og:description" content="Which stock tokens hold their peg: every deep market ranked by how closely it tracks its real share, from hourly readings.">
-<meta property="og:url" content="https://usepegwatch.vercel.app/ranking">
-<meta property="og:image" content="https://usepegwatch.vercel.app/api/og?p=ranking">
-<meta name="twitter:image" content="https://usepegwatch.vercel.app/api/og?p=ranking">
+<meta property="og:title" content="Weekly peg report · Pegwatch">
+<meta property="og:description" content="Every Friday: which stock tokens held their peg best and worst this week, the biggest miss and how each issuer did.">
+<meta property="og:url" content="https://usepegwatch.vercel.app/report">
+<meta property="og:image" content="https://usepegwatch.vercel.app/api/og?p=report">
+<meta name="twitter:image" content="https://usepegwatch.vercel.app/api/og?p=report">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -33,8 +33,8 @@
     <div class="navlinks">
       <a href="/">Stocks</a>
       <a href="/spreads">Spreads</a>
-      <a href="/ranking" aria-current="page">Ranking</a>
-      <a href="/report">Report</a>
+      <a href="/ranking">Ranking</a>
+      <a href="/report" aria-current="page">Report</a>
       <a href="/weekend">Weekend</a>
       <a href="/chains">Chains</a>
       <a href="/alerts">Alerts</a>
@@ -45,8 +45,8 @@
   <div class="mobilenav" aria-label="Sections">
     <a href="/">Stocks</a>
     <a href="/spreads">Spreads</a>
-    <a href="/ranking" aria-current="page">Ranking</a>
-    <a href="/report">Report</a>
+    <a href="/ranking">Ranking</a>
+    <a href="/report" aria-current="page">Report</a>
     <a href="/weekend">Weekend</a>
     <a href="/chains">Chains</a>
     <a href="/alerts">Alerts</a>
@@ -55,55 +55,47 @@
 
   <header class="pagehead">
     <div>
-      <p class="eyebrow">Peg ranking</p>
-      <h1>Which tokens <em>hold their peg.</em></h1>
-      <p class="lede">Every hour the US market trades we check how far each stock token sits from its real share. Here is every deep market ranked by how closely it has stuck to the share price.</p>
+      <p class="eyebrow">Weekly peg report</p>
+      <h1>The week in <em>pegs.</em></h1>
+      <p class="lede">Every Friday after the US close we turn the week’s hourly readings into one report: which stock tokens held their peg, which drifted, and how each issuer did.</p>
     </div>
   </header>
 
-  <section class="stats panel" aria-label="Key figures">
-    <div><small>Markets ranked</small><strong id="rkCount">–</strong><span id="rkCountSub">&nbsp;</span></div>
-    <div><small>Steady markets</small><strong id="rkFair">–</strong><span id="rkFairSub">&nbsp;</span></div>
-    <div><small>Closest to its share</small><strong id="rkBest">–</strong><span id="rkBestSub">&nbsp;</span></div>
-    <div><small>Furthest from its share</small><strong id="rkWorst">–</strong><span id="rkWorstSub">&nbsp;</span></div>
+  <section class="wkstatus reporthead panel" aria-live="polite">
+    <div><p class="eyebrow" id="rpMode">Weekly peg report</p><h2 id="rpTitle">Loading…</h2><p id="rpText" class="muted"></p>
+      <p class="repctas"><a class="btn small" id="rpShare" href="#" target="_blank" rel="noopener">Share on X</a><a class="btn small ghost" href="https://t.me/usePegwatchBot?start=rep" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg> Every Friday on Telegram</a></p></div>
+    <label class="reppick"><small>Week</small><select id="rpPick" aria-label="Pick a week"></select></label>
   </section>
 
-  <section class="tablepanel panel" aria-labelledby="rkH">
-    <div class="sectionhead">
-      <div><h2 id="rkH">Every deep market, ranked by peg</h2><p class="sub" id="rkSub">Loading the hourly readings…</p></div>
-    </div>
-    <div class="controls">
-      <div class="chips" role="group" aria-label="Order">
-        <button class="chip" data-rsort="best" aria-pressed="true">Best held</button>
-        <button class="chip" data-rsort="worst" aria-pressed="false">Worst held</button>
-      </div>
-      <div class="chips" role="group" aria-label="Chain" id="rkChains"></div>
-      <span class="grow"></span>
-      <input type="search" id="q" placeholder="Search ticker or company" aria-label="Search ticker or company">
-    </div>
-    <div class="tablebox">
-      <table class="rktable">
-        <thead><tr>
-          <th class="r">#</th><th>Token</th><th class="r">Typical gap</th><th>Within ±0.5%</th><th class="r hm">Worst hour</th><th class="hm">Last readings</th><th class="r hm">Depth</th>
-        </tr></thead>
-        <tbody id="rkRows"><tr><td colspan="7" class="empty">Loading the ranking…</td></tr></tbody>
-      </table>
-    </div>
-    <div class="more"><span id="count"></span><button class="btn ghost small" id="showMore" hidden>Show more</button></div>
+  <section class="stats panel" aria-label="Key figures">
+    <div><small>Tokens checked</small><strong id="rpCount">–</strong><span id="rpCountSub">&nbsp;</span></div>
+    <div><small>Steady all week</small><strong id="rpFair">–</strong><span id="rpFairSub">&nbsp;</span></div>
+    <div><small>Typical gap</small><strong id="rpTyp">–</strong><span id="rpTypSub">&nbsp;</span></div>
+    <div><small>Biggest miss</small><strong id="rpSwing">–</strong><span id="rpSwingSub">&nbsp;</span></div>
+  </section>
+
+  <div class="twocol">
+    <section class="panel replist" aria-labelledby="rpBestH"><p class="eyebrow">Steadiest</p><h2 id="rpBestH">Held the peg best</h2><ol id="rpBest"><li class="muted">Loading…</li></ol></section>
+    <section class="panel replist" aria-labelledby="rpWorstH"><p class="eyebrow warn">Drifted</p><h2 id="rpWorstH">Furthest from the share</h2><ol id="rpWorst"><li class="muted">Loading…</li></ol></section>
+  </div>
+
+  <section class="block-sm" aria-labelledby="rpIssH">
+    <div class="sectionhead"><div><h2 id="rpIssH">Issuers this week</h2><p class="sub" id="rpIssSub">Typical distance from the share across each issuer’s deep markets.</p></div></div>
+    <div class="repiss" id="rpIssuers"></div>
   </section>
 
   <div class="twocol block-sm">
     <section class="panel note-card">
-      <p class="eyebrow">How we rank</p>
-      <h3>Typical gap first</h3>
-      <p>For every market over $10k deep with a published share ratio, we take its hourly distance from the share price × its ratio. Markets are ranked by the typical (median) distance, then by how many hours they spent within ±0.5%.</p>
-      <p>Weekend hours are left out: while the stock market is shut the share price is frozen, so a gap then is a guess about Monday, not a missed peg. That lives on the <a href="/weekend">weekend signal</a>.</p>
+      <p class="eyebrow">How the report works</p>
+      <h3>Hourly readings, frozen on Friday</h3>
+      <p>Every hour the US market trades we check how far each stock token over $10k deep sits from its share price × its share ratio. When the market closes on Friday, the week’s readings are ranked by typical (median) gap and saved as that week’s report. Until then you see the week so far.</p>
+      <p>Weekend hours are left out: the share price is frozen then, so a gap is a guess about Monday. That lives on the <a href="/weekend">weekend signal</a>.</p>
     </section>
     <section class="panel note-card">
-      <p class="eyebrow">What it means</p>
-      <h3>A tight peg is a working arbitrage</h3>
-      <p>A token stays close to its share when someone can mint and redeem it against the real stock. When that link is slow, costly or closed, the token drifts. A market that often sits far from its share is one to trade with care.</p>
-      <p><a href="/learn">Stock tokens explained →</a></p>
+      <p class="eyebrow">Go deeper</p>
+      <h3>Every market, ranked</h3>
+      <p>The report shows the top and bottom five. The <a href="/ranking">peg ranking</a> has every deep market with its worst hour and recent readings, and each stock has its own page with every version side by side.</p>
+      <p><a href="/ranking">See the full ranking →</a></p>
     </section>
   </div>
 

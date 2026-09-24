@@ -528,6 +528,48 @@ function renderRanking(){
   $("showMore").hidden = list.length <= rk.limit;
 }
 
+/* ---------- weekly peg report (from /api/history?p=report): frozen every Friday, live while the week trades ---------- */
+const rp = {data: null};
+function loadReport(w){
+  fetch("/api/history?p=report" + (w ? "&w=" + encodeURIComponent(w) : "")).then(r => r.json()).then(j => { rp.data = j; renderReport(); })
+    .catch(() => { rp.data = {error: true}; renderReport(); });
+}
+const weekDay = w => new Date(w + "T12:00:00Z").toLocaleDateString("en-US", {month: "short", day: "numeric", timeZone: "UTC"});
+function renderReport(){
+  const d = rp.data;
+  if (!d) return;
+  const r = d.report, pick = $("rpPick"), wk = r ? r.week : d.week;
+  const opts = [...new Set([...(d.live && d.week ? [d.week] : []), ...(d.weeks || [])])];
+  if (pick) pick.innerHTML = opts.map(w => `<option value="${esc(w)}"${w === wk ? " selected" : ""}>Week to ${esc(weekDay(w))}${d.live && w === d.week ? " (so far)" : ""}</option>`).join("");
+  if (pick) pick.parentElement.hidden = opts.length < 2;
+  if (!r){
+    set("rpMode", "Weekly peg report");
+    set("rpTitle", d.error ? "The report couldn’t be loaded right now." : "The first report is still collecting readings.");
+    set("rpText", d.error ? "Please try again in a minute." : "It needs a few hours of US trading. Check back soon.");
+    ["rpBest", "rpWorst"].forEach(id => { $(id).innerHTML = `<li class="muted">${d.error ? "–" : "Not enough readings yet."}</li>`; });
+    return;
+  }
+  const b = r.best[0], w = r.worst[0], sw = r.swing;
+  set("rpMode", d.live ? "This week so far" : "Final · US market closed");
+  set("rpTitle", `Week to ${weekDay(r.week)}: ${b.symbol} held its peg best`);
+  set("rpText", `${b.symbol} on ${chainName(b.chain)} stayed typically ${pctTxt(b.typical)} from its share across ${r.hours} hourly reading${r.hours === 1 ? "" : "s"}. ` +
+    (d.live ? "The report is final once the US market closes on Friday." : `Frozen after the close on ${weekDay(r.week)}.`));
+  const share = `This week’s steadiest stock token: ${b.symbol} on ${chainName(b.chain)}, typically ${pctTxt(b.typical)} from its share. Furthest off: ${w.symbol} at ${pctTxt(w.typical)}. The weekly peg report:`;
+  $("rpShare").href = "https://x.com/intent/post?text=" + encodeURIComponent(share) + "&url=" + encodeURIComponent(location.origin + "/report");
+  set("rpCount", r.markets); set("rpCountSub", `on ${r.chains} chain${r.chains === 1 ? "" : "s"}, over $10k deep`);
+  set("rpFair", Math.round(r.steady / r.markets * 100) + "%"); set("rpFairSub", `${r.steady} within ±0.5% for 90%+ of hours`);
+  set("rpTyp", pctTxt(r.typical)); set("rpTypSub", "the middle token’s typical gap");
+  set("rpSwing", sw.symbol); set("rpSwingSub", `${chainName(sw.chain)} · ${(sw.worst * 100).toFixed(2)}% off at worst`);
+  const item = t => `<li><a class="ticker plain" href="${stockUrl(t.ticker)}">${t.logo ? `<img src="${esc(t.logo)}" alt="" width="28" height="28" loading="lazy" onerror="this.remove()">` : ""}<span class="proto"><b class="asset">${esc(t.symbol)}</b><span>${esc(chainName(t.chain))}${t.issuer === "robinhood" ? "" : " · " + esc(issuerOf(t.issuer).short || issuerOf(t.issuer).name)}</span></span></a>` +
+    `<span class="repval"><span class="gap ${t.typical > FAIR ? "premium" : t.typical > FAIR / 2 ? "warn" : "fair"}"><span class="num">${pctTxt(t.typical)}</span></span><small class="sub2 num">${Math.round(t.within * 100)}% of hours within ±0.5%</small></span></li>`;
+  $("rpBest").innerHTML = r.best.map(item).join("");
+  $("rpWorst").innerHTML = r.worst.map(item).join("");
+  $("rpIssuers").innerHTML = (r.issuers || []).map((i, k) => `<article class="panel">
+      <p class="eyebrow">${k === 0 && r.issuers.length > 1 ? "Tightest peg" : "Issuer"}</p><h3>${esc(issuerOf(i.id).name || i.id)}</h3>
+      <dl><div><dt>Typical gap</dt><dd class="num">${pctTxt(i.medianGap)}</dd></div><div><dt>Within ±0.5%</dt><dd class="num">${Math.round((i.withinFair || 0) * 100)}%</dd></div><div><dt>Markets</dt><dd class="num">${i.markets}</dd></div></dl>
+    </article>`).join("") + (r.weekend ? `<article class="panel"><p class="eyebrow">Weekend signal</p><h3>${r.weekend.right} of ${r.weekend.called}</h3><p class="muted">Monday opens the tokens called right the weekend before. <a href="/weekend">See the signal →</a></p></article>` : "");
+}
+
 function render(){
   renderTape();
   if ($("mkt")) renderMarket();
@@ -537,6 +579,7 @@ function render(){
   if ($("wkRows")) renderWeekend();
   if ($("stRows")) renderStock();
   if ($("rkRows")) renderRanking();
+  if ($("rpBest")) renderReport();
   if (!$("rows")) return;
   if (state.deep){   // /?s=TSLA (links from alerts and other pages) opens that stock, whatever the filters
     const i = filtered().sort((a, b) => (b.volume24h ?? -1) - (a.volume24h ?? -1)).findIndex(r => r.ticker === state.deep);
@@ -604,6 +647,10 @@ if ($("rkRows")){
     document.querySelectorAll(`.chip[${attr}]`).forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
     renderRanking();
   });
+}
+if ($("rpBest")){
+  loadReport();
+  $("rpPick").addEventListener("change", e => loadReport(e.target.value));
 }
 if ($("spreadRows")){
   $("q").addEventListener("input", e => { state.q = e.target.value; renderSpreads(); });

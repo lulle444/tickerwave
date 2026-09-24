@@ -99,6 +99,20 @@ const CARDS = {
       label: `on ${CHAIN_NAMES[b.chain]}: closest to its share, typically ${pm(b.typical)}`,
       stats: [[fmtN(all.length), "deep markets ranked"], [Math.round(good / all.length * 100) + "%", "almost always within ±0.5%"], [pm(w.typical), `furthest: ${w.symbol}`]]};
   },
+  // the weekly peg report: the week's steadiest token, live until Friday's close
+  async report(site){
+    const path = "/report", R = require("../lib/report");
+    const r = await R.latest(await currentBoard(site)).catch(() => null);
+    const pm = g => "±" + (g * 100).toFixed(2) + "%";
+    if (!r) return {eyebrow: "Weekly peg report", big: "Fridays", path,
+      label: "Which stock tokens held their peg best and worst this week, from hourly readings of every deep market.",
+      stats: [["±0.5%", "the line we call fair"], ["$10k+", "deep markets only"], ["Every Friday", "after the US close"]]};
+    const day = new Date(r.week + "T12:00:00Z").toLocaleDateString("en-US", {month: "short", day: "numeric", timeZone: "UTC"});
+    const b = r.best[0], w = r.worst[0];
+    return {eyebrow: `Weekly peg report · Week to ${day}${r.live ? " · So far" : ""}`, big: b.symbol, path,
+      label: `on ${CHAIN_NAMES[b.chain]}: steadiest this week, typically ${pm(b.typical)} off`,
+      stats: [[fmtN(r.markets), "tokens checked hourly"], [Math.round(r.steady / r.markets * 100) + "%", "almost always within ±0.5%"], [pm(w.typical), `furthest: ${w.symbol}`]]};
+  },
   async weekend(site){
     const path = "/weekend";
     if (!marketOpen()){
@@ -159,7 +173,7 @@ module.exports = async function handler(req, res){
     const img = new ImageResponse(card(c, logoUri()), {width: 1200, height: 630, fonts: f.length ? f : undefined});
     const buf = Buffer.from(await img.arrayBuffer());
     res.setHeader("Content-Type", "image/png");
-    res.setHeader("Cache-Control", `public, s-maxage=${p === "weekend" || p === "stock" || p === "ranking" ? 900 : 3600}, stale-while-revalidate=86400`);
+    res.setHeader("Cache-Control", `public, s-maxage=${p === "weekend" || p === "stock" || p === "ranking" || p === "report" ? 900 : 3600}, stale-while-revalidate=86400`);
     res.status(200).end(buf);
   } catch (e) {
     console.error("og", p, e);
