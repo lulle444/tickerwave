@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tickerwave · Stock tokens on every chain</title>
+<meta name="description" content="Tokenized stocks on Robinhood Chain, Solana, Ethereum and more, compared side by side: price against the real share, market depth and volume, live.">
+<link rel="canonical" href="{site}">
+<link rel="icon" type="image/svg+xml" href="/assets/logo-mark.svg">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:title" content="Tickerwave · Stock tokens on every chain">
+<meta property="og:description" content="Tokenized stocks on Robinhood Chain, Solana, Ethereum and more, compared side by side: price against the real share, market depth and volume, live.">
+<meta property="og:url" content="{site}">
+<meta property="og:image" content="{site}/api/og?p=home">
+<meta name="twitter:image" content="{site}/api/og?p=home">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#F1F0F8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Montserrat:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/brand.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Tickerwave","url":"https://tickerwave.vercel.app/","logo":"https://tickerwave.vercel.app/assets/apple-touch-icon.png"},{"@type":"WebSite","name":"Tickerwave","url":"https://tickerwave.vercel.app/"}]}</script>
+</head>
+<body>
+<canvas id="tide" aria-hidden="true"></canvas>
+<div class="wrap">
+  <nav class="nav glass" aria-label="Main">
+    <a class="logo" href="/" aria-label="Tickerwave home"><img src="/assets/logo-mark.svg" alt="" width="36" height="36"><span class="word">TICKER<b>WAVE</b></span></a>
+    <div class="navlinks">
+      <a href="/" aria-current="page">Stocks</a>
+      <a href="/#chains">Chains</a>
+      <a href="/#how">How it works</a>
+      <a href="/about">About</a>
+    </div>
+    <div class="source" id="source"><span class="dot" id="dot"></span><span id="sourceText">Loading data…</span></div>
+  </nav>
+  <div class="mobilenav" aria-label="Sections">
+    <a href="/" aria-current="page">Stocks</a>
+    <a href="/#chains">Chains</a>
+    <a href="/#how">How it works</a>
+    <a href="/about">About</a>
+  </div>
+
+  <header class="hero solo" id="top">
+    <div>
+      <p class="eyebrow">Stock tokens · Every chain</p>
+      <h1>One stock. <em>Every chain.</em></h1>
+      <p class="lede">Tesla, Nvidia and hundreds more now trade as tokens on Robinhood Chain, Solana, Ethereum and beyond. Tickerwave lines up every version side by side, so you can see which one tracks the real share best and where the market is deepest.</p>
+      <div class="ctas">
+        <a class="btn primary" href="#board">Compare stock tokens</a>
+        <a class="btn ghost" href="#how">How it works</a>
+      </div>
+      <p class="trust">Live prices from the chains · No sign-up · Independent</p>
+    </div>
+  </header>
+
+  <section class="gauge glass" aria-label="Key figures">
+    <div><small>Stocks</small><strong id="gStocks">–</strong><span id="gStocksSub">&nbsp;</span></div>
+    <div><small>Token versions</small><strong id="gVersions">–</strong><span id="gVersionsSub">&nbsp;</span></div>
+    <div><small>Traded on chain, 24h</small><strong id="gVolume">–</strong><span id="gVolumeSub">&nbsp;</span></div>
+    <div><small>Closest to the share</small><strong id="gBest">–</strong><span id="gBestSub">&nbsp;</span></div>
+  </section>
+
+  <section class="tablepanel glass" id="board" aria-labelledby="boardH">
+    <div class="sectionhead">
+      <div><h2 id="boardH">Every stock, every version</h2><p class="mkt" id="mkt">Checking market hours…</p></div>
+    </div>
+    <div class="controls">
+      <div class="chips" role="group" aria-label="Chain" id="chainChips">
+        <button class="chip" data-chain="all" aria-pressed="true">All chains</button>
+      </div>
+      <label class="field check" for="multi"><input type="checkbox" id="multi"> On 2+ chains</label>
+      <span class="grow"></span>
+      <input type="search" id="q" placeholder="Search ticker or company" aria-label="Search ticker or company">
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead><tr>
+          <th><button data-sort="ticker">Stock</button></th>
+          <th class="r"><button data-sort="ref">Share price</button></th>
+          <th><button data-sort="count">Versions</button></th>
+          <th class="r"><button data-sort="bestGap">Closest version</button></th>
+          <th class="r"><button data-sort="liquidity">Market depth</button></th>
+          <th class="r"><button data-sort="volume24h">24h volume</button></th>
+        </tr></thead>
+        <tbody id="rows"><tr><td colspan="6" class="empty">Loading stock tokens…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="more"><span id="count"></span><button class="btn ghost small" id="showMore" hidden>Show more</button></div>
+  </section>
+
+  <section class="block" id="chains" aria-labelledby="chainsH">
+    <div class="sectionhead"><div><p class="eyebrow">Where they trade</p><h2 id="chainsH">Chains and issuers</h2><p class="sub">Each issuer holds the real shares and mints tokens against them. The same stock can exist in several versions, with different rules for who can mint, redeem and hold them.</p></div></div>
+    <div class="issuergrid" id="issuers"></div>
+  </section>
+
+  <section class="block" id="how" aria-labelledby="howH">
+    <div class="sectionhead"><div><p class="eyebrow">How it works</p><h2 id="howH">Two prices, one gap</h2></div></div>
+    <ol class="steps">
+      <li class="glass"><span class="stepnum">01</span><h3>The share</h3><p>We take the live bid and ask for the real share, adjusted for each token’s share ratio after dividends and splits.</p></li>
+      <li class="glass"><span class="stepnum">02</span><h3>The token</h3><p>For every version on every chain we read the price in its deepest on-chain market, plus how much money sits in it and what traded in the last 24 hours.</p></li>
+      <li class="glass"><span class="stepnum">03</span><h3>The gap</h3><p>On-chain price divided by the share price, minus one. Within ±0.5% counts as fair. Thin markets are flagged, because one small trade can move them.</p></li>
+    </ol>
+  </section>
+
+  <section class="block faq" id="faq" aria-labelledby="faqH">
+    <div class="sectionhead"><div><p class="eyebrow">FAQ</p><h2 id="faqH">Questions, answered</h2></div></div>
+    <div class="faqlist glass">
+      <details><summary>What is a stock token?</summary><p>A token on a blockchain that tracks one share of a real company. The issuer buys and holds the shares, and lets approved partners mint and redeem tokens against them. Holding the token gives you the price exposure, not shareholder rights such as voting.</p></details>
+      <details><summary>Why can the same stock have different prices?</summary><p>Each version trades in its own markets on its own chain. Arbitrage pulls them toward the share price, but fees, market depth and who is allowed to mint and redeem leave small gaps. When the US market is closed, tokens keep trading while the share price stands still.</p></details>
+      <details><summary>Is Tickerwave free?</summary><p>Yes. No sign-up, no wallet connection and no fee. Tickerwave is read-only and never touches your funds.</p></details>
+      <details><summary>Can I buy tokens here?</summary><p>No. We link to the market each price comes from, so you can check it yourself. Many stock tokens are not available to US persons or in some countries, so check the issuer’s rules before you trade.</p></details>
+    </div>
+  </section>
+
+  <footer class="sitefoot">
+    <div class="footgrid">
+      <div class="footbrand">
+        <a class="logo" href="/" aria-label="Tickerwave home"><img src="/assets/logo-mark.svg" alt="" width="26" height="26"><span class="word">TICKER<b>WAVE</b></span></a>
+        <p>Every stock token, on every chain. Independent, read-only and free. Live on-chain data, no paid placements.</p>
+      </div>
+      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/#chains">Chains and issuers</a><a href="/#how">How it works</a></nav>
+      <nav aria-label="Company"><h4>Company</h4><a href="/about">About</a><a href="/about#disclaimer">Disclaimer</a></nav>
+    </div>
+    <div class="footbase">
+      <span>© 2026 Tickerwave. Not financial advice. Stock tokens are not the shares themselves.</span>
+      <span id="updated"></span>
+    </div>
+  </footer>
+</div>
+<script src="/chart.js"></script>
+<script src="/board.js"></script>
+<script src="/backdrop.js"></script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

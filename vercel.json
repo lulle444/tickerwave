@@ -1,0 +1,7 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "functions": {
+    "api/og.js": {"includeFiles": "assets/logo-mark.svg"}
+  }
+}

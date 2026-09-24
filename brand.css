@@ -1,0 +1,26 @@
+/* Written by build.py from brand.json. Edit brand.json instead. */
+:root{
+  --b-ink:#14163A;
+  --b-muted:#5F6483;
+  --b-accent:#4B3FD6;
+  --b-accent2:#8A6CF2;
+  --b-accentSoft:#E9E6FC;
+  --b-chart1:#5146D8;
+  --b-chart2:#C2762B;
+  --b-ground:#F1F0F8;
+  --b-ground2:#E6E4F3;
+  --b-top:#F8F7FC;
+  --b-surface2:#F3F2FA;
+  --b-rowHover:#F7F6FD;
+  --b-glowA:#8A6CF2;
+  --b-glowB:#4B3FD6;
+  --b-glowC:#60A5FA;
+  --b-glowD:#C8BEFA;
+  --b-buttonFrom:#14163A;
+  --b-buttonTo:#3B2FA8;
+  --ink-rgb:20,22,58;
+  --glowA-rgb:138,108,242;
+  --glowB-rgb:75,63,214;
+  --glowC-rgb:96,165,250;
+  --glowD-rgb:200,190,250;
+}

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>About · Tickerwave</title>
+<meta name="description" content="What Tickerwave is, where its data comes from, and the disclaimer.">
+<link rel="canonical" href="{site}/about">
+<link rel="icon" type="image/svg+xml" href="/assets/logo-mark.svg">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:title" content="About · Tickerwave">
+<meta property="og:description" content="What Tickerwave is, where its data comes from, and the disclaimer.">
+<meta property="og:url" content="{site}/about">
+<meta property="og:image" content="{site}/api/og?p=home">
+<meta name="twitter:image" content="{site}/api/og?p=home">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#F1F0F8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Montserrat:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/brand.css">
+</head>
+<body>
+<canvas id="tide" aria-hidden="true"></canvas>
+<div class="wrap">
+  <nav class="nav glass" aria-label="Main">
+    <a class="logo" href="/" aria-label="Tickerwave home"><img src="/assets/logo-mark.svg" alt="" width="36" height="36"><span class="word">TICKER<b>WAVE</b></span></a>
+    <div class="navlinks">
+      <a href="/">Stocks</a>
+      <a href="/#chains">Chains</a>
+      <a href="/#how">How it works</a>
+      <a href="/about" aria-current="page">About</a>
+    </div>
+    <div class="source" id="source"><span class="dot" id="dot"></span><span id="sourceText">Loading data…</span></div>
+  </nav>
+  <div class="mobilenav" aria-label="Sections">
+    <a href="/">Stocks</a>
+    <a href="/#chains">Chains</a>
+    <a href="/#how">How it works</a>
+    <a href="/about" aria-current="page">About</a>
+  </div>
+
+  <header class="pagehead">
+    <div>
+      <p class="eyebrow">About Tickerwave</p>
+      <h1>Same stock. A clearer view.</h1>
+      <p class="lede">Tickerwave compares tokenized stocks across blockchains and issuers, so you can see which version of a stock tracks the real share best and where it trades.</p>
+    </div>
+  </header>
+
+  <section class="block" aria-labelledby="princH">
+    <div class="sectionhead"><div><p class="eyebrow">What we stand for</p><h2 id="princH">Three principles</h2></div></div>
+    <div class="steps">
+      <article class="glass"><span class="stepnum">01</span><h3>Independent</h3><p>No issuer or exchange pays for a place in the table. The order follows the column you sort by, nothing else.</p></article>
+      <article class="glass"><span class="stepnum">02</span><h3>Transparent</h3><p>Every price links back to the public market it came from, and the method is written out on the front page.</p></article>
+      <article class="glass"><span class="stepnum">03</span><h3>Non-custodial</h3><p>Tickerwave is read-only. No wallet connection, no deposits, no sign-up.</p></article>
+    </div>
+  </section>
+
+  <div class="twocol block">
+    <div class="glass note-card">
+      <p class="eyebrow">Data</p>
+      <h3>Where the numbers come from</h3>
+      <p>Token lists and share ratios come from each issuer’s public data. On-chain prices, market depth and volume come from DexScreener, which indexes the exchanges on each chain. Share prices come from live quotes for the underlying stock.</p>
+    </div>
+    <div class="glass note-card">
+      <p class="eyebrow">Business model</p>
+      <h3>How Tickerwave stays free</h3>
+      <p>Tickerwave is free and has no paid placements. If we add sponsored spots later, they’ll be clearly labelled and kept outside the table.</p>
+    </div>
+  </div>
+
+  <section class="block glass note-card" id="disclaimer" aria-labelledby="discH">
+    <p class="eyebrow">Disclaimer</p>
+    <h2 id="discH" style="font-size:22px">Not financial advice</h2>
+    <p>Tickerwave provides information for general educational purposes only. Nothing on this site is financial, investment, tax or legal advice, or a recommendation to buy or sell any asset.</p>
+    <p>Stock tokens are not the shares themselves. They carry issuer, custody, smart-contract and liquidity risk, may not give shareholder rights, and are restricted in many countries including the United States. Prices come from third parties and can be delayed or wrong.</p>
+    <p>Tickerwave is independent and is not affiliated with Robinhood, Backed, Kraken, Ondo, DexScreener or any issuer or exchange listed. Always do your own research before you trade.</p>
+  </section>
+
+  <footer class="sitefoot">
+    <div class="footgrid">
+      <div class="footbrand">
+        <a class="logo" href="/" aria-label="Tickerwave home"><img src="/assets/logo-mark.svg" alt="" width="26" height="26"><span class="word">TICKER<b>WAVE</b></span></a>
+        <p>Every stock token, on every chain. Independent, read-only and free. Live on-chain data, no paid placements.</p>
+      </div>
+      <nav aria-label="Product"><h4>Product</h4><a href="/">Stock tokens</a><a href="/#chains">Chains and issuers</a><a href="/#how">How it works</a></nav>
+      <nav aria-label="Company"><h4>Company</h4><a href="/about">About</a><a href="/about#disclaimer">Disclaimer</a></nav>
+    </div>
+    <div class="footbase">
+      <span>© 2026 Tickerwave. Not financial advice. Stock tokens are not the shares themselves.</span>
+      <span id="updated"></span>
+    </div>
+  </footer>
+</div>
+<script src="/chart.js"></script>
+<script src="/board.js"></script>
+<script src="/backdrop.js"></script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
