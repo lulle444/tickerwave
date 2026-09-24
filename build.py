@@ -227,7 +227,8 @@ HOME = """
 """
 
 ABOUT = pagehead("About {{name}}", "Same stock. A clearer view.",
-  "{{name}} compares tokenized stocks across blockchains and issuers, so you can see which version of a stock tracks the real share best and where it trades.") + """
+  "{{name}} compares tokenized stocks across blockchains and issuers, so you can see which version of a stock tracks the real share best and where it trades.").replace(
+  '<header class="pagehead">', '<header class="pagehead banner"><picture class="bannerart"><source srcset="/assets/banner.webp" type="image/webp"><img src="/assets/banner.jpg" alt="" width="1800" height="600" fetchpriority="high"></picture>', 1) + """
   <section class="block" aria-labelledby="princH">
     <div class="sectionhead"><div><p class="eyebrow">What we stand for</p><h2 id="princH">Three principles</h2></div></div>
     <div class="steps">
