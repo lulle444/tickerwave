@@ -16,3 +16,10 @@ jobs:
           curl -sS --max-time 20 -o m.json -w "multiplier: HTTP %{http_code} %{time_total}s\n" "https://api.backed.fi/api/v2/public/assets/TSLAx/multiplier?network=Solana"; cat m.json; echo
           curl -sS --max-time 20 -o q.json -w "price: HTTP %{http_code} %{time_total}s\n" "https://api.backed.fi/api/v2/public/assets/TSLAx/price-data"; cat q.json; echo
           curl -sS --max-time 20 -o d.json -w "dex solana: HTTP %{http_code} %{time_total}s\n" "https://api.dexscreener.com/tokens/v1/solana/XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB,Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh"; jq -c '[.[] | {chainId, dexId, base: .baseToken.symbol, priceUsd, liq: .liquidity.usd}]' d.json
+          echo "--- Robinhood quotes (every field, a few tickers)"
+          curl -sS --max-time 30 -o rh.json "https://api.robinhood.com/rhj/prices"
+          jq -c '(.quotes // []) | length' rh.json || head -c 300 rh.json
+          jq -c '[(.quotes // [])[] | select((tostring | test("\"(TSLA|JNJ|NVDA|RBLX)\"")))] | .[0:4]' rh.json || true
+          jq -c 'del(.quotes) | keys' rh.json || true
+          echo "--- xStocks price data"
+          for s in TSLAx NVDAx JNJx; do curl -sS --max-time 20 "https://api.backed.fi/api/v2/public/assets/$s/price-data"; echo; done
