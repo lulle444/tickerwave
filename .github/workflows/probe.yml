@@ -7,6 +7,7 @@ jobs:
     timeout-minutes: 4
     steps:
       - run: |
+          set +e
           for host in https://api.backed.fi/api/v2 https://api.xstocks.fi/api/v2; do
             for page in 0 1 2; do
               curl -sS --max-time 40 -o p.json -w "$host page $page: HTTP %{http_code} %{time_total}s %{size_download}B\n" "$host/public/assets?page=$page&pageSize=100" || true
