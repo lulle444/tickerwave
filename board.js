@@ -61,7 +61,7 @@ async function load(){
     if (!r.ok) throw new Error("HTTP " + r.status);
     const j = await r.json();
     if (!j.stocks || !j.stocks.length) throw new Error("empty");
-    state.chains = j.chains || []; state.issuers = j.issuers || [];
+    state.chains = j.chains || []; state.issuers = j.issuers || []; state.rightsChecked = j.rightsChecked || null;
     state.stocks = j.stocks.map(prep);
     const at = new Date(j.updatedAt || Date.now());
     $("dot").className = "dot live";
@@ -475,6 +475,31 @@ function renderStock(){
   const main = s.best || s.versions[0];
   if (BOT && main) ctas.push(`<a class="btn small" href="https://t.me/${BOT}?start=g_${encodeURIComponent(vidOf(main))}" target="_blank" rel="noopener">${BELL} Alert me when ${esc(main.symbol)} drifts</a>`);
   if ($("stCtas")) $("stCtas").innerHTML = ctas.join("") || '<a href="/alerts">How alerts work →</a>';
+  renderOwn(s);
+}
+
+// "What you own": one card per issuer of this stock, with its tokens' live share ratio and the issuer's own terms
+const OWN_ROWS = [["form", "What it is"], ["dividends", "Dividends"], ["mint", "Mint and redeem"], ["held", "Shares held by"],
+  ["proof", "Backing checked by"], ["issuer", "Issued by"], ["closed", "Who can’t hold it"], ["rights", "Shareholder rights"]];
+function renderOwn(s){
+  const box = $("ownGrid");
+  if (!box) return;
+  const ids = [...new Set(s.versions.map(v => v.issuer))].sort((a, b) => state.issuers.findIndex(i => i.id === a) - state.issuers.findIndex(i => i.id === b));
+  const ratio = v => v.multiplier == null ? "ratio not published" : `1 token = ${(+v.multiplier).toFixed(4).replace(/0+$/, "").replace(/\.$/, "")} ${esc(s.ticker)}`;
+  box.innerHTML = ids.map(id => {
+    const i = issuerOf(id), r = i.rights;
+    const vs = s.versions.filter(v => v.issuer === id);
+    const toks = vs.map(v => `<li><b class="num">${esc(v.symbol)}</b><span>${esc(chainName(v.chain))}</span><span class="num">${ratio(v)}</span></li>`).join("");
+    return `<article class="panel owncard">
+      <p class="eyebrow">${esc(i.name)}</p>
+      <ul class="owntoks">${toks}</ul>
+      ${r ? `<dl>${OWN_ROWS.filter(([k]) => r[k]).map(([k, label]) => `<div><dt>${label}</dt><dd>${esc(r[k])}</dd></div>`).join("")}</dl>
+      <p class="ownsrc">Source: ${r.sources.map(x => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}</a>`).join(" · ")}</p>` : '<p class="muted">No terms on file for this issuer yet.</p>'}
+    </article>`;
+  }).join("");
+  const n = ids.length;
+  set("ownSub", (n > 1 ? `${n} issuers make ${s.ticker} tokens, each on its own terms. ` : `One issuer makes ${s.ticker} tokens here. `) +
+    "Share ratios are live. The terms are summarized from each issuer’s own documents" + (state.rightsChecked ? `, checked ${new Date(state.rightsChecked + "T12:00:00Z").toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric", timeZone: "UTC"})}.` : "."));
 }
 
 /* ---------- peg ranking: every deep market scored on its hourly readings (from /api/history?p=ranking) ---------- */

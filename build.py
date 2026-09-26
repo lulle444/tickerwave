@@ -517,6 +517,12 @@ STOCK = """
     <p class="lbfoot">Gap compares each token with the share price × its share ratio (the shares one token stands for after dividends and splits). Markets under $10k deep are marked thin: a small trade moves their price. The dashed line in the peg history is the share price.</p>
   </section>
 
+  <section class="block-sm" aria-labelledby="ownH">
+    <div class="sectionhead"><div><p class="eyebrow">Same ticker, different rights</p><h2 id="ownH">What you own with each __TICKER__ token</h2><p class="sub" id="ownSub">Who issues each version, who holds the shares, what happens to dividends and who can redeem.</p></div></div>
+    <div class="issuergrid owngrid" id="ownGrid"></div>
+    <p class="lbfoot">Summaries, not legal advice. The issuer’s own terms decide, so read them before you trade.</p>
+  </section>
+
   <div class="twocol block-sm">
     <section class="panel note-card" id="stAlert">
       <p class="eyebrow">Alerts</p>
